@@ -4,7 +4,7 @@ import random
 
 class Particion():
 
-    # Esta clase mantiene la lista de �ndices de Train y Test para cada partici�n del conjunto de particiones
+    # Esta clase mantiene la lista de indices de Train y Test para cada particion del conjunto de particiones
     def __init__(self):
         self.indicesTrain=[]
         self.indicesTest=[]
@@ -35,7 +35,6 @@ class ValidacionSimple(EstrategiaParticionado):
 
     # Constructor
     def __init__(self, nombreEstrategia, porcentajeDeseado):
-        # super().__init__(nombreEstrategia, 2, porcentajeDeseado)
         # 2 es el numero de particiones en validacion simple
         super().__init__(nombreEstrategia, 2)
         # Porcentaje deseado es una propiedad especifica de la validacion simple
@@ -44,7 +43,6 @@ class ValidacionSimple(EstrategiaParticionado):
 
     # Crea particiones segun el metodo tradicional de division de los datos segun el porcentaje deseado.
     # Devuelve una lista de particiones (clase Particion)
-    # TODO: implementar
     def creaParticiones(self,datos,seed=None):
         # we assign a new value to seed only if it is None already
         if seed == None:
@@ -78,7 +76,6 @@ class ValidacionCruzada(EstrategiaParticionado):
     # Crea particiones segun el metodo de validacion cruzada.
     # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
     # Esta funcion devuelve una lista de particiones (clase Particion)
-    # TODO: implementar
     def creaParticiones(self,datos,seed=None):
         # we assign a new value to seed only if it is None already
         if seed == None:
