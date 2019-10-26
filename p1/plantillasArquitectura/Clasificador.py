@@ -76,9 +76,54 @@ class ClasificadorNaiveBayes(Clasificador):
 
 
 
-    # TODO: implementar
-    def entrenamiento(self,datostrain,atributosDiscretos,diccionario):
         pass
+    def entrenamiento(self,datostrain,atributosDiscretos,diccionario, laplace=False):
+        prioris = prioris(datostrain)
+        # There are len - 1 attributes, since last element in atributosDiscretos, the class, does not correspond to a proper attribute
+        nAtributos = len(atributosDiscretos)-1
+        # We extract a set with all classes in the data
+        classes = set(datosTrain[:, -1])
+        # The following loop will build the NB tables
+        # We create a list where the i-th element of the list is associated to the i-th attribute,
+        # and for each attribute a dictionary with classes as keys is created
+        # If the attribute is continuous, then for each class key the appropriate normal distribution is assigned as a value
+        # Otherwise, for each class key a new dictionary is created, which has the attribute values as keys,
+        #            and for each value key,the number of data elements with the current class and current value is assigned as value
+
+        
+
+        attrTables = []
+        for i in range(nAtributos-1):
+                # For each attribute, a dictionary with all classes as values
+                classesTable = dict()
+                    
+                for clase in classes:
+                    # We extract a set with all attribute values for the i-th attribute
+                    attrValues = set(datosTrain[:,i])
+                    # If i-th attribute discrete:
+                    # For each class, a dictionary with the i-th attribute values as keys
+                    classesTable[clase] = dict()            
+                    if(atributosDiscretos[i]):
+                        for value in attrValues:
+                            # We count the number of elements of class clase out of the elements 
+                            # where the i-th attribute has value value
+                            count = np.sum((datosTrain[:,i]==value ) & (datosTrain[:,-1]==clase))
+                            #if count == 0 and laplace == True: 
+                            #    AQUI SE HARIA LAPLACE: activar una flag que, una vez recorridos todos los values, sume uno a todos los dics
+                            #    Ineficiente a tope pero al menos no es larguisimo, nValuesxNclasses no deberia ser un valor muy grande    
+                            classesTable[clase][value] = count
+
+                    # If i-th attribute continuous:
+                    else:
+                        # We create an array with the i-th attribute values of data where class == clase
+                        filteredColumn = datosTrain[datosTrain[:,-1]==clase][:, i]
+                        # We extract mean and variance of the i-th column
+                        mean = np.mean(filteredColumn)
+                        std = np.std(filteredColumn)
+                        classesTable[clase] = norm(mean, std)
+                        
+                attrTables.append(classesTable)   
+        return attrTables            
 
 
 
@@ -102,3 +147,26 @@ class ClasificadorKNN(Clasificador):
     # TODO: implementar
     def clasifica(self,datostest,atributosDiscretos,diccionario):
         pass
+
+
+
+
+##############################################################################
+
+# Funciones auxiliares
+
+# Funcion para calcular los prioris del conjunto de datos de train
+# Recibe una matriz np con datos como filas. Ultima columna corresponde a la clase
+# Devuelve un diccionario que tiene las clases como keys, y el priori de la clase como valor
+
+def prioris(datosTrain):
+    prioris = dict()
+    nDatos = len(datosTrain)
+    classIdx = np.size(datosTrain,1)-1 
+    for dato in datosTrain:
+        clase = dato[classIdx]
+        if clase not in prioris.keys():
+            prioris[clase] = 1/nDatos
+        else :
+            prioris[clase] += 1/nDatos
+    return prioris
