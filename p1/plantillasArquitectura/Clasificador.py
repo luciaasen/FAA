@@ -53,12 +53,24 @@ class Clasificador:
 
         # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
         particiones = particionado.creaParticiones(dataset.datos, seed)
-        # - Para validacion cruzada: en el bucle hasta nv entrenamos el clasificador con la particion de train i
-        # y obtenemos el error en la particion de test i
-        for i in particiones.indicesTrain:
-            clasificador.entrenamiento(i, dataset.nominalAtributos, dataset.diccionarios)
-        #TODO Aqui no faltaria calcular el error en casa iteracion, guardar los valores y al final devolver la media?
-
+        # Para validacion cruzada: en el bucle hasta nv entrenamos el clasificador con la particion de train i
+        # y obtenemos el error en la particion de test i        
+        # Inicializamos error a 0
+        error = 0.0
+        for particion in particiones:
+            # Extraemos datos para el entrenamiento, y los de test
+            trainData = dataset.extraeDatos(particion.indicesTrain)
+            testData = dataset.extraeDatos(particion.indicesTest)
+            # Entrenamos datos (es decir, generamos tablas de Naive Bayes)
+            attrTables = clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios)
+            # Clasificamos usando las tablas que ya han sido asignadas 
+            pred = clasificador.clasifica(particiones.indicesTest, dataset.nominalAtributos, dataset.diccionarios)
+            # Sumamos el error de esta iteracion al error total
+            error += error(testData, pred)
+        # Calculamos error medio a lo largo de todas las particiones.
+        # En el caso de validacion simple, esto sera solo una particion
+        error /= len(particiones)
+            
 
         # - Para validacion simple (hold-out): entrenamos el clasificador con la particion de train
         # y obtenemos el error en la particion test. Otra opcion es repetir la validacion simple un numero especificado
@@ -74,11 +86,11 @@ class Clasificador:
 
 class ClasificadorNaiveBayes(Clasificador):
 
-
+    
 
         pass
-    def entrenamiento(self,datostrain,atributosDiscretos,diccionario, laplace=False):
-        prioris = prioris(datostrain)
+    def entrenamiento(self,datosTrain,atributosDiscretos,diccionario, laplace=False):
+        prioris = prioris(datosTrain)
         # There are len - 1 attributes, since last element in atributosDiscretos, the class, does not correspond to a proper attribute
         nAtributos = len(atributosDiscretos)-1
         # We extract a set with all classes in the data
@@ -123,13 +135,44 @@ class ClasificadorNaiveBayes(Clasificador):
                         classesTable[clase] = norm(mean, std)
                         
                 attrTables.append(classesTable)   
-        return attrTables            
+        self.NBTables = attrTables
+        return 
 
 
 
     # TODO: implementar
-    def clasifica(self,datostest,atributosDiscretos,diccionario):
-        pass
+    def clasifica(self,datosTest,atributosDiscretos,diccionario):
+        pred = []
+        for data in datostest:
+            maxClass = [clase, 0]
+            for clase in classes:    
+                # Initialize the posteriori numerator as the priori probability for clase
+                verodotpriori = prioris[clase]
+                # Now we multiply by each P(attrN == valueofattrNinourdataelement | clase)
+                nAtributos = len(atributosDiscretos)-1
+                for i in range(nAtributos-1):
+                    # Value of the i-th attribute in the given datosTest element 
+                    value = data[i]
+                    # We search in NBTables: 
+                    # take the i-th position of the array, corresponding to the dictionary of the i-th attribute
+                    if atributosDiscretos[i]:
+                        # inside, if the attribute is discrete, the dictionary corresponding to the 'clase' key 
+                        # and from there, the key 'value' (which is number of occurrences of class = clase and ithattribute = value)
+                        nOccurrences = NBTables[i][clase][value]
+                        # And divide by the number of occurrences of the other values given class = clase
+                        vero = nOccurrences/sum(attrTables[i][clase].values())
+                    else :
+                        # if the attribute is continuous, take the distribution stored in the 'clase' key
+                        # and calculate the pdf of the ith attribute being the value that our datosTest element has
+                        vero = NBTables[i][clase].pdf(value)
+                    verodotpriori *= vero
+                
+                # If the last calculated numerator is greater than the previous max, update the class and its numerator
+                if verodotpriori > maxClass[1]:
+                    maxClass = [clase, verodotpriori]
+            # We append to the pred array the class predicted for the datosTest element we are testing
+            pred.append(maxClass[0])
+        return pred
 
 
 ##############################################################################

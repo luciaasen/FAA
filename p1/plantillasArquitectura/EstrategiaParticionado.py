@@ -61,9 +61,7 @@ class ValidacionSimple(EstrategiaParticionado):
         # array size of testRows
         particionSimple.indicesTest = rows[: testRows]
 
-        self.listaParticiones.append(particionSimple.indicesTrain)
-        self.listaParticiones.append(particionSimple.indicesTest)
-
+        self.listaParticiones.append(particionSimple)
 
         return particionSimple
 
