@@ -49,7 +49,6 @@ class Clasificador:
 
 
     # Realiza una clasificacion utilizando una estrategia de particionado determinada
-    # TODO: implementar esta funcion
     def validacion(self,particionado,dataset,clasificador,seed=None):
 
         # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
@@ -58,9 +57,12 @@ class Clasificador:
         # y obtenemos el error en la particion de test i
         for i in particiones.indicesTrain:
             clasificador.entrenamiento(i, dataset.nominalAtributos, dataset.diccionarios)
+        #TODO Aqui no faltaria calcular el error en casa iteracion, guardar los valores y al final devolver la media?
+
+
         # - Para validacion simple (hold-out): entrenamos el clasificador con la particion de train
-        # y obtenemos el error en la particion test. Otra opci�n es repetir la validaci�n simple un n�mero especificado
-        # de veces, obteniendo en cada una un error. Finalmente se calcular�a la media.
+        # y obtenemos el error en la particion test. Otra opcion es repetir la validacion simple un numero especificado
+        # de veces, obteniendo en cada una un error. Finalmente se calcularia la media.
         pred = clasificador.clasifica(particiones.indicesTest, dataset.nominalAtributos, dataset.diccionarios)
         error = error(dataset.datos, pred)
         return error
