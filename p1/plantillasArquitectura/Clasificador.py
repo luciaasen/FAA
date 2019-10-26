@@ -53,11 +53,17 @@ class Clasificador:
     def validacion(self,particionado,dataset,clasificador,seed=None):
 
         # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
+        particiones = particionado.creaParticiones(dataset.datos, seed)
         # - Para validacion cruzada: en el bucle hasta nv entrenamos el clasificador con la particion de train i
         # y obtenemos el error en la particion de test i
+        for i in particiones.indicesTrain:
+            clasificador.entrenamiento(i, dataset.nominalAtributos, dataset.diccionarios)
         # - Para validacion simple (hold-out): entrenamos el clasificador con la particion de train
-        # y obtenemos el error en la particion test. Otra opci�n es repetir la validaci�n simple un n�mero especificado de veces, obteniendo en cada una un error. Finalmente se calcular�a la media.
-        pass
+        # y obtenemos el error en la particion test. Otra opci�n es repetir la validaci�n simple un n�mero especificado
+        # de veces, obteniendo en cada una un error. Finalmente se calcular�a la media.
+        pred = clasificador.clasifica(particiones.indicesTest, dataset.nominalAtributos, dataset.diccionarios)
+        error = error(dataset.datos, pred)
+        return error
 
 ##############################################################################
 ##############################################################################
