@@ -69,6 +69,7 @@ class Datos:
     # print(self.datos)
     f.close()
 
-  # TODO: implementar en la pr�ctica 1
+  #Recibe en idx una lista de indices que extraer y devolver de la
+  #Matriz datos
   def extraeDatos(self, idx):
-    pass
+      return datos[idx]
