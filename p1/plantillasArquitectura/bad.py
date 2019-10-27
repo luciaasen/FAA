@@ -208,3 +208,40 @@ class ValidacionCruzada(EstrategiaParticionado):
         self.listaParticiones.append(particionCruzada.indicesTest)
 
         return particionCruzada
+
+
+class ValidacionSimpleScikit(EstrategiaParticionado):
+    # Constructor
+    def __init__(self, porcentajeDeseado):
+        # 2 es el numero de particiones en validacion simple
+        super().__init__("ValidacionSimpleScikit", 2)
+        # Porcentaje deseado es una propiedad especifica de la validacion simple
+        self.porcentajeDeseado = porcentajeDeseado
+
+
+    # Crea particiones segun el metodo tradicional de division de los datos segun el porcentaje deseado.
+    # Devuelve una lista de particiones (clase Particion)
+    # TODO: implementar
+    def creaParticiones(self,datos,seed=None):
+        # we assign a new value to seed only if it is None already
+        if seed == None:
+            random.seed(seed)
+
+        # number of rows of the datos Matrix (number of inidvidual data)
+        totalRows = len(datos)
+        # Assuming porcentajeDeseado refers to the percentage of the data we want to save for testing
+        # we obtain the number of rows (data) to use for testing
+        percent = self.porcentajeDeseado/100
+        numTestRows = int(percent * totalRows))
+        rows = list(range(0, totalRows))
+        particionSimple = Particion()
+        # this time we use the scikit learn function which automatically shuffles
+        # and splits the data
+        train, test = train_test_split(rows, test_size=percent, random_state=seed, shuffle=True)
+        particionSimple.indicesTrain = train
+        particionSimple.indicesTest = test
+
+        self.listaParticiones.append(particionSimple)
+
+
+        return self.listaParticiones

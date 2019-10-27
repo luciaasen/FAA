@@ -1,5 +1,7 @@
 from abc import ABCMeta,abstractmethod
 import random
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import ShuffleSplit
 
 
 class Particion():
@@ -35,7 +37,6 @@ class ValidacionSimple(EstrategiaParticionado):
 
     # Constructor
     def __init__(self, porcentajeDeseado):
-        # super().__init__(nombreEstrategia, 2, porcentajeDeseado)
         # 2 es el numero de particiones en validacion simple
         super().__init__("ValidacionSimple", 2)
         # Porcentaje deseado es una propiedad especifica de la validacion simple
@@ -54,14 +55,14 @@ class ValidacionSimple(EstrategiaParticionado):
         totalRows = len(datos)
         # Assuming porcentajeDeseado refers to the percentage of the data we want to save for testing
         # we obtain the number of rows (data) to use for testing
-        testRows = int( (self.porcentajeDeseado * totalRows)/100 )
+        numTestRows = int( (self.porcentajeDeseado * totalRows)/100 )
         rows = list(range(0, totalRows))
         random.shuffle(rows)
         particionSimple = Particion()
-        # array size of totalRows - testRows
-        particionSimple.indicesTrain = rows[testRows :]
-        # array size of testRows
-        particionSimple.indicesTest = rows[: testRows]
+        # array size of totalRows - numTestRows
+        particionSimple.indicesTrain = rows[numTestRows :]
+        # array size of numTestRows
+        particionSimple.indicesTest = rows[: numTestRows]
 
         self.listaParticiones.append(particionSimple)
 
@@ -102,3 +103,79 @@ class ValidacionCruzada(EstrategiaParticionado):
             self.listaParticiones.append(particionCruzada)
 
         return self.listaParticiones
+
+#####################################################################################################
+
+class ValidacionSimpleScikit(EstrategiaParticionado):
+    # Constructor
+    def __init__(self, porcentajeDeseado):
+        # 2 es el numero de particiones en validacion simple
+        super().__init__("ValidacionSimpleScikit", 2)
+        # Porcentaje deseado es una propiedad especifica de la validacion simple
+        self.porcentajeDeseado = porcentajeDeseado
+
+
+    # Crea particiones segun el metodo tradicional de division de los datos segun el porcentaje deseado.
+    # Devuelve una lista de particiones (clase Particion)
+    # TODO: implementar
+    def creaParticiones(self,datos,seed=None):
+        # we assign a new value to seed only if it is None already
+        if seed == None:
+            random.seed(seed)
+
+        # number of rows of the datos Matrix (number of inidvidual data)
+        totalRows = len(datos)
+        # Assuming porcentajeDeseado refers to the percentage of the data we want to save for testing
+        # we obtain the number of rows (data) to use for testing
+        percent = self.porcentajeDeseado/100
+        rows = list(range(0, totalRows))
+        # instanciacion de un objeto de clase ShuffleSplit
+        # n_splits es el num de particiones (train, test), en el caso de ValidacionSimple, 1
+        splitter = ShuffleSplit(n_splits=1, test_size=percent, random_state=seed)
+        self.listaParticiones = createSplits(splitter, rows)
+
+        return self.listaParticiones
+
+#####################################################################################################
+class ValidacionCruzadaScikit(EstrategiaParticionado):
+    def __init__(self, numParticiones):
+        super().__init__("ValidacionCruzadaScikit", numParticiones)
+
+    # Crea particiones segun el metodo de validacion cruzada.
+    # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
+    # Esta funcion devuelve una lista de particiones (clase Particion)
+    # TODO: implementar
+    def creaParticiones(self,datos,seed=None):
+        # we assign a new value to seed only if it is None already
+        if seed == None:
+            random.seed(seed)
+
+        # number of rows of the datos Matrix (number of inidvidual data)
+        totalRows = len(datos)
+        rows = list(range(0, totalRows))
+        # number of rows in each partition (we take the integer part for the size of the test data)
+        partitionSize = int(totalRows / self.numeroParticiones)
+        # instanciacion de un objeto de clase ShuffleSplit
+        # n_splits es el num de particiones (train, test), en el caso de ValidacionCruzada, n
+        splitter = ShuffleSplit(n_splits=self.numeroParticiones, test_size=partitionSize, random_state=seed)
+        self.listaParticiones = createSplits(splitter, rows)
+
+        return self.listaParticiones
+
+
+
+##############################################################################
+
+# Funciones auxiliares
+
+# Funcion comun que extrae la lista de particiones a partir de los porcentajes y
+# numero de particiones a partir de un objeto ShuffleSplit
+def createSplits(splitter, rows):
+    lista = []
+    for train, test in splitter.split(rows):
+        particion = Particion()
+        particion.indicesTrain = list(train)
+        particion.indicesTest = list(test)
+        lista.append(particion)
+
+    return lista

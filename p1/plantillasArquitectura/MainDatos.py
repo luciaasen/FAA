@@ -22,6 +22,19 @@ for i in part1:
     print("     Train: " + str(i.indicesTrain))
     print("     Test: " + str(i.indicesTest))
     cont = cont + 1
+
+
+print("sciKit")
+particionadoSimpleScikit = EstrategiaParticionado.ValidacionSimpleScikit(50)
+part1 = particionadoSimpleScikit.creaParticiones(datos_mat)
+
+print("Longitud lista de particiones 1 = " + str(len(part1)))
+cont = 0
+for i in part1:
+    print("iteracion " + str(cont) + ":")
+    print("     Train: " + str(i.indicesTrain))
+    print("     Test: " + str(i.indicesTest))
+    cont = cont + 1
 # print("conjunto Train de part1 tiene " + str(len(part1.indicesTrain)) + " elementos")
 # print("conjunto Test de part1 tiene " + str(len(part1.indicesTest)) + " elementos")
 
@@ -39,3 +52,15 @@ for i in part2:
 # print("conjunto Train de part2 tiene " + str(len(part2.indicesTrain)) + " elementos")
 # print("conjunto Test de part2 tiene " + str(len(part2.indicesTest)) + " elementos")
 # dataset=Datos('datos/german.data')
+
+print("sciKit")
+particionadoCruzadoScikit = EstrategiaParticionado.ValidacionCruzadaScikit(10)
+part2 = particionadoCruzadoScikit.creaParticiones(datos_mat)
+
+print("Longitud lista de particiones 2 = " + str(len(part2)))
+cont = 0
+for i in part2:
+    print("iteracion " + str(cont) + ":")
+    print("     Train: " + str(i.indicesTrain))
+    print("     Test: " + str(i.indicesTest))
+    cont = cont + 1
