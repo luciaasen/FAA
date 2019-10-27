@@ -4,7 +4,7 @@ import random
 
 class Particion():
 
-    # Esta clase mantiene la lista de indices de Train y Test para cada particion del conjunto de particiones
+    # Esta clase mantiene la lista de �ndices de Train y Test para cada partici�n del conjunto de particiones
     def __init__(self):
         self.indicesTrain=[]
         self.indicesTest=[]
@@ -34,15 +34,17 @@ class EstrategiaParticionado:
 class ValidacionSimple(EstrategiaParticionado):
 
     # Constructor
-    def __init__(self, nombreEstrategia, porcentajeDeseado):
+    def __init__(self, porcentajeDeseado):
+        # super().__init__(nombreEstrategia, 2, porcentajeDeseado)
         # 2 es el numero de particiones en validacion simple
-        super().__init__(nombreEstrategia, 2)
+        super().__init__("ValidacionSimple", 2)
         # Porcentaje deseado es una propiedad especifica de la validacion simple
         self.porcentajeDeseado = porcentajeDeseado
 
 
     # Crea particiones segun el metodo tradicional de division de los datos segun el porcentaje deseado.
     # Devuelve una lista de particiones (clase Particion)
+    # TODO: implementar
     def creaParticiones(self,datos,seed=None):
         # we assign a new value to seed only if it is None already
         if seed == None:
@@ -63,17 +65,19 @@ class ValidacionSimple(EstrategiaParticionado):
 
         self.listaParticiones.append(particionSimple)
 
-        return particionSimple
+
+        return self.listaParticiones
 
 
 #####################################################################################################
 class ValidacionCruzada(EstrategiaParticionado):
-    def __init__(self, nombreEstrategia, numParticiones):
-        super().__init__(nombreEstrategia, numParticiones)
+    def __init__(self, numParticiones):
+        super().__init__("ValidacionCruzada", numParticiones)
 
     # Crea particiones segun el metodo de validacion cruzada.
     # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
     # Esta funcion devuelve una lista de particiones (clase Particion)
+    # TODO: implementar
     def creaParticiones(self,datos,seed=None):
         # we assign a new value to seed only if it is None already
         if seed == None:
@@ -81,21 +85,20 @@ class ValidacionCruzada(EstrategiaParticionado):
 
         # number of rows of the datos Matrix (number of inidvidual data)
         totalRows = len(datos)
-        # number of rows in each partition
-        partitionSize = int(totalRows / self.numeroParticiones)
         rows = list(range(0, totalRows))
         random.shuffle(rows)
-        particionCruzada = Particion()
+        # number of rows in each partition (we take the integer part for the size of the test data)
+        partitionSize = int(totalRows / self.numeroParticiones)
+        # Decision de diseno: en el caso de que no se divida perfectamente el conjunto en el
+        # numero de particiones, los datos extra se utilizaran en entrenamiento. Esto da lugar
+        # a que en una iteracion, el mismo conjunto de datos (los del final) se utilicen
+        # exclusivamente para entrenar y jamas entren en el conjunto de testing
+        for i in range(0, self.numeroParticiones):
+            particionCruzada = Particion()
+            test = rows[i * partitionSize : (i + 1) * partitionSize]
+            train = list(set(rows) - set(test))
+            particionCruzada.indicesTrain = train
+            particionCruzada.indicesTest = test
+            self.listaParticiones.append(particionCruzada)
 
-        # lim es el tamano del cjto de datos hasta que sea test data
-        lim = partitionSize * (self.numeroParticiones - 1)
-        particionCruzada.indicesTrain = rows[:lim]
-        particionCruzada.indicesTest = rows[lim:]
-
-        # insertamos listas de tamano partitionSize
-        for i in range(0, self.numeroParticiones - 1):
-            self.listaParticiones.append(particionCruzada.indicesTrain[i*partitionSize: (i+1)*partitionSize])
-
-        self.listaParticiones.append(particionCruzada.indicesTest)
-
-        return particionCruzada
+        return self.listaParticiones
