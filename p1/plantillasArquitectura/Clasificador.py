@@ -62,7 +62,7 @@ class Clasificador:
             trainData = dataset.extraeDatos(particion.indicesTrain)
             testData = dataset.extraeDatos(particion.indicesTest)
             # Entrenamos datos (es decir, generamos tablas de Naive Bayes)
-            attrTables = clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios)
+            clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios)
             # Clasificamos usando las tablas que ya han sido asignadas 
             pred = clasificador.clasifica(particiones.indicesTest, dataset.nominalAtributos, dataset.diccionarios)
             # Sumamos el error de esta iteracion al error total
@@ -71,12 +71,6 @@ class Clasificador:
         # En el caso de validacion simple, esto sera solo una particion
         error /= len(particiones)
             
-
-        # - Para validacion simple (hold-out): entrenamos el clasificador con la particion de train
-        # y obtenemos el error en la particion test. Otra opcion es repetir la validacion simple un numero especificado
-        # de veces, obteniendo en cada una un error. Finalmente se calcularia la media.
-        pred = clasificador.clasifica(particiones.indicesTest, dataset.nominalAtributos, dataset.diccionarios)
-        error = error(dataset.datos, pred)
         return error
 
 ##############################################################################
@@ -103,7 +97,7 @@ class ClasificadorNaiveBayes(Clasificador):
         #            and for each value key,the number of data elements with the current class and current value is assigned as value
 
         
-
+        self.prioris = prioris(datosTrain)
         attrTables = []
         for i in range(nAtributos-1):
                 # For each attribute, a dictionary with all classes as values
@@ -139,14 +133,13 @@ class ClasificadorNaiveBayes(Clasificador):
         return 
 
 
-
-    # TODO: implementar
-    def clasifica(self,datosTest,atributosDiscretos,diccionario):
+    def clasifica(self,datosTest,atributosDiscretos,diccionario):#TODO pasar prioris datostrain
         pred = []
         for data in datostest:
             maxClass = [clase, 0]
             for clase in classes:    
                 # Initialize the posteriori numerator as the priori probability for clase
+
                 verodotpriori = prioris[clase]
                 # Now we multiply by each P(attrN == valueofattrNinourdataelement | clase)
                 nAtributos = len(atributosDiscretos)-1
