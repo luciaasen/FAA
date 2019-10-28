@@ -34,10 +34,9 @@ class EstrategiaParticionado:
 class ValidacionSimple(EstrategiaParticionado):
 
     # Constructor
-    def __init__(self, nombreEstrategia, porcentajeDeseado):
-        # super().__init__(nombreEstrategia, 2, porcentajeDeseado)
+    def __init__(self, porcentajeDeseado):
         # 2 es el numero de particiones en validacion simple
-        super().__init__(nombreEstrategia, 2)
+        super().__init__("ValidacionSimple", 2)
         # Porcentaje deseado es una propiedad especifica de la validacion simple
         self.porcentajeDeseado = porcentajeDeseado
 
@@ -70,8 +69,8 @@ class ValidacionSimple(EstrategiaParticionado):
 
 #####################################################################################################
 class ValidacionCruzada(EstrategiaParticionado):
-    def __init__(self, nombreEstrategia, numParticiones):
-        super().__init__(nombreEstrategia, numParticiones)
+    def __init__(self, numParticiones):
+        super().__init__("ValidacionCruzada", numParticiones)
 
     # Crea particiones segun el metodo de validacion cruzada.
     # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
