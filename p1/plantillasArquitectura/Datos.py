@@ -72,4 +72,4 @@ class Datos:
   #Recibe en idx una lista de indices que extraer y devolver de la
   #Matriz datos
   def extraeDatos(self, idx):
-      return datos[idx]
+      return self.datos[idx]

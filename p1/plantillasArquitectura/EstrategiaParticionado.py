@@ -1,7 +1,5 @@
 from abc import ABCMeta,abstractmethod
 import random
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold
 
 
 class Particion():
@@ -36,16 +34,16 @@ class EstrategiaParticionado:
 class ValidacionSimple(EstrategiaParticionado):
 
     # Constructor
-    def __init__(self, porcentajeDeseado):
+    def __init__(self, nombreEstrategia, porcentajeDeseado):
+        # super().__init__(nombreEstrategia, 2, porcentajeDeseado)
         # 2 es el numero de particiones en validacion simple
-        super().__init__("ValidacionSimple", 2)
+        super().__init__(nombreEstrategia, 2)
         # Porcentaje deseado es una propiedad especifica de la validacion simple
         self.porcentajeDeseado = porcentajeDeseado
 
 
     # Crea particiones segun el metodo tradicional de division de los datos segun el porcentaje deseado.
     # Devuelve una lista de particiones (clase Particion)
-    # TODO: implementar
     def creaParticiones(self,datos,seed=None):
         # we assign a new value to seed only if it is None already
         if seed == None:
@@ -55,14 +53,14 @@ class ValidacionSimple(EstrategiaParticionado):
         totalRows = len(datos)
         # Assuming porcentajeDeseado refers to the percentage of the data we want to save for testing
         # we obtain the number of rows (data) to use for testing
-        numTestRows = int( (self.porcentajeDeseado * totalRows)/100 )
+        testRows = int( (self.porcentajeDeseado * totalRows)/100 )
         rows = list(range(0, totalRows))
         random.shuffle(rows)
         particionSimple = Particion()
-        # array size of totalRows - numTestRows
-        particionSimple.indicesTrain = rows[numTestRows :]
-        # array size of numTestRows
-        particionSimple.indicesTest = rows[: numTestRows]
+        # array size of totalRows - testRows
+        particionSimple.indicesTrain = rows[testRows :]
+        # array size of testRows
+        particionSimple.indicesTest = rows[: testRows]
 
         self.listaParticiones.append(particionSimple)
 
@@ -72,13 +70,12 @@ class ValidacionSimple(EstrategiaParticionado):
 
 #####################################################################################################
 class ValidacionCruzada(EstrategiaParticionado):
-    def __init__(self, numParticiones):
-        super().__init__("ValidacionCruzada", numParticiones)
+    def __init__(self, nombreEstrategia, numParticiones):
+        super().__init__(nombreEstrategia, numParticiones)
 
     # Crea particiones segun el metodo de validacion cruzada.
     # El conjunto de entrenamiento se crea con las nfolds-1 particiones y el de test con la particion restante
     # Esta funcion devuelve una lista de particiones (clase Particion)
-    # TODO: implementar
     def creaParticiones(self,datos,seed=None):
         # we assign a new value to seed only if it is None already
         if seed == None:

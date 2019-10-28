@@ -1,6 +1,7 @@
 from abc import ABCMeta,abstractmethod
-
-
+import math 
+import numpy as np
+from scipy.stats import norm
 class Clasificador:
 
     # Clase abstracta
@@ -27,7 +28,7 @@ class Clasificador:
     def error(self,datos,pred):
         numErr = 0
         numOk = 0
-        rowLen = len(datos[0])
+        rowLen = len(datos[0])-1
 
         # Aqui se compara la prediccion (pred) con las clases reales y se calcula el error
         # Suponiendo que pred es una lista con las predicciones, y que por defecto
@@ -62,9 +63,9 @@ class Clasificador:
             # Entrenamos datos (es decir, generamos tablas de Naive Bayes)
             clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios)
             # Clasificamos usando las tablas que ya han sido asignadas
-            pred = clasificador.clasifica(particiones.indicesTest, dataset.nominalAtributos, dataset.diccionarios)
+            pred = clasificador.clasifica(testData, dataset.nominalAtributos, dataset.diccionarios)
             # Sumamos el error de esta iteracion al error total
-            error += error(testData, pred)
+            error += self.error(testData, pred)
         # Calculamos error medio a lo largo de todas las particiones.
         # En el caso de validacion simple, esto sera solo una particion
         error /= len(listaParticiones)
@@ -79,14 +80,13 @@ class Clasificador:
 class ClasificadorNaiveBayes(Clasificador):
 
 
-
-        pass
+    
+    pass
     def entrenamiento(self,datosTrain,atributosDiscretos,diccionario, laplace=False):
-        prioris = prioris(datosTrain)
         # There are len - 1 attributes, since last element in atributosDiscretos, the class, does not correspond to a proper attribute
         nAtributos = len(atributosDiscretos)-1
         # We extract a set with all classes in the data
-        classes = diccionario[-1].keys()
+        classes = diccionario[-1].values()
         # The following loop will build the NB tables
         # We create a list where the i-th element of the list is associated to the i-th attribute,
         # and for each attribute a dictionary with classes as keys is created
@@ -104,7 +104,7 @@ class ClasificadorNaiveBayes(Clasificador):
                 laplaceNeedsToBeApplied = False 
                 for clase in classes:
                     # We extract a set with all attribute values for the i-th attribute
-                    attrValues = diccionario[i].keys()
+                    attrValues = diccionario[i].values()
                     # If i-th attribute discrete:
                     # For each class, a dictionary with the i-th attribute values as keys
                     classesTable[clase] = dict()
@@ -124,6 +124,10 @@ class ClasificadorNaiveBayes(Clasificador):
                         # We extract mean and variance of the i-th column
                         mean = np.mean(filteredColumn)
                         std = np.std(filteredColumn)
+                        if math.isnan(std) or std==0:
+                            print('clase ', clase, 'atributo num', i) 
+                            print(filteredColumn)
+                            print(datosTrain[:, [i, -1]])
                         classesTable[clase] = norm(mean, std)
                 # If needed, we apply Laplace correction to the table: classesTable[clase][value] needs to be incremented for all clase, value
                 # Ineficiente a tope pero al menos no es larguisimo, nValuesxNclasses no deberia ser un valor muy grande
@@ -139,12 +143,12 @@ class ClasificadorNaiveBayes(Clasificador):
 
     def clasifica(self,datosTest,atributosDiscretos,diccionario):
         pred = []
-        for data in datostest:
-            maxClass = [clase, 0]
+        classes = diccionario[-1].values()
+        for data in datosTest:
+            maxClass = ['Initial maximum class', 0]
             for clase in classes:
                 # Initialize the posteriori numerator as the priori probability for clase
-
-                verodotpriori = prioris[clase]
+                verodotpriori = self.prioris[clase]
                 # Now we multiply by each P(attrN == valueofattrNinourdataelement | clase)
                 nAtributos = len(atributosDiscretos)-1
                 for i in range(nAtributos):
@@ -155,13 +159,13 @@ class ClasificadorNaiveBayes(Clasificador):
                     if atributosDiscretos[i]:
                         # inside, if the attribute is discrete, the dictionary corresponding to the 'clase' key
                         # and from there, the key 'value' (which is number of occurrences of class = clase and ithattribute = value)
-                        nOccurrences = NBTables[i][clase][value]
+                        nOccurrences = self.NBTables[i][clase][value]
                         # And divide by the number of occurrences of the other values given class = clase
-                        vero = nOccurrences/sum(attrTables[i][clase].values())
+                        vero = nOccurrences/sum(self.NBTables[i][clase].values())
                     else :
                         # if the attribute is continuous, take the distribution stored in the 'clase' key
                         # and calculate the pdf of the ith attribute being the value that our datosTest element has
-                        vero = NBTables[i][clase].pdf(value)
+                        vero = self.NBTables[i][clase].pdf(value)
                     verodotpriori *= vero
 
                 # If the last calculated numerator is greater than the previous max, update the class and its numerator
