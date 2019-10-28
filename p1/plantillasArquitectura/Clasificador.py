@@ -8,7 +8,6 @@ class Clasificador:
 
     # Metodos abstractos que se implementan en casa clasificador concreto
     @abstractmethod
-    # TODO: esta funcion debe ser implementada en cada clasificador concreto
     # datosTrain: matriz numpy con los datos de entrenamiento
     # atributosDiscretos: array bool con la indicatriz de los atributos nominales
     # diccionario: array de diccionarios de la estructura Datos utilizados para la codificacion de variables discretas
@@ -17,7 +16,6 @@ class Clasificador:
 
 
     @abstractmethod
-    # TODO: esta funcion debe ser implementada en cada clasificador concreto
     # devuelve un numpy array con las predicciones
     def clasifica(self,datosTest,atributosDiscretos,diccionario):
         pass
@@ -88,7 +86,7 @@ class ClasificadorNaiveBayes(Clasificador):
         # There are len - 1 attributes, since last element in atributosDiscretos, the class, does not correspond to a proper attribute
         nAtributos = len(atributosDiscretos)-1
         # We extract a set with all classes in the data
-        classes = set(datosTrain[:, -1])
+        classes = diccionario[-1].keys()
         # The following loop will build the NB tables
         # We create a list where the i-th element of the list is associated to the i-th attribute,
         # and for each attribute a dictionary with classes as keys is created
@@ -99,13 +97,14 @@ class ClasificadorNaiveBayes(Clasificador):
 
         self.prioris = prioris(datosTrain)
         attrTables = []
-        for i in range(nAtributos-1):
+        for i in range(nAtributos):
                 # For each attribute, a dictionary with all classes as values
                 classesTable = dict()
 
+                laplaceNeedsToBeApplied = False 
                 for clase in classes:
                     # We extract a set with all attribute values for the i-th attribute
-                    attrValues = set(datosTrain[:,i])
+                    attrValues = diccionario[i].keys()
                     # If i-th attribute discrete:
                     # For each class, a dictionary with the i-th attribute values as keys
                     classesTable[clase] = dict()
@@ -114,9 +113,8 @@ class ClasificadorNaiveBayes(Clasificador):
                             # We count the number of elements of class clase out of the elements
                             # where the i-th attribute has value value
                             count = np.sum((datosTrain[:,i]==value ) & (datosTrain[:,-1]==clase))
-                            #if count == 0 and laplace == True:
-                            #    AQUI SE HARIA LAPLACE: activar una flag que, una vez recorridos todos los values, sume uno a todos los dics
-                            #    Ineficiente a tope pero al menos no es larguisimo, nValuesxNclasses no deberia ser un valor muy grande
+                            if count == 0 and laplace == True:
+                                laplaceNeedsToBeApplied = True
                             classesTable[clase][value] = count
 
                     # If i-th attribute continuous:
@@ -127,13 +125,19 @@ class ClasificadorNaiveBayes(Clasificador):
                         mean = np.mean(filteredColumn)
                         std = np.std(filteredColumn)
                         classesTable[clase] = norm(mean, std)
+                # If needed, we apply Laplace correction to the table: classesTable[clase][value] needs to be incremented for all clase, value
+                # Ineficiente a tope pero al menos no es larguisimo, nValuesxNclasses no deberia ser un valor muy grande
+                if laplaceNeedsToBeApplied:
+                    for clase in classes:
+                        for value in attrValues:
+                            classesTable[clase][value] += 1
 
                 attrTables.append(classesTable)
         self.NBTables = attrTables
         return
 
 
-    def clasifica(self,datosTest,atributosDiscretos,diccionario):#TODO pasar prioris datostrain
+    def clasifica(self,datosTest,atributosDiscretos,diccionario):
         pred = []
         for data in datostest:
             maxClass = [clase, 0]
@@ -143,7 +147,7 @@ class ClasificadorNaiveBayes(Clasificador):
                 verodotpriori = prioris[clase]
                 # Now we multiply by each P(attrN == valueofattrNinourdataelement | clase)
                 nAtributos = len(atributosDiscretos)-1
-                for i in range(nAtributos-1):
+                for i in range(nAtributos):
                     # Value of the i-th attribute in the given datosTest element
                     value = data[i]
                     # We search in NBTables:
