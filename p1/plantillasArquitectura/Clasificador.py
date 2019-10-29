@@ -48,7 +48,7 @@ class Clasificador:
 
 
     # Realiza una clasificacion utilizando una estrategia de particionado determinada
-    def validacion(self,particionado,dataset,clasificador,seed=None):
+    def validacion(self,particionado,dataset,clasificador,seed=None, laplace = False):
 
         # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
         listaParticiones = particionado.creaParticiones(dataset.datos, seed)
@@ -61,7 +61,7 @@ class Clasificador:
             trainData = dataset.extraeDatos(particion.indicesTrain)
             testData = dataset.extraeDatos(particion.indicesTest)
             # Entrenamos datos (es decir, generamos tablas de Naive Bayes)
-            clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios)
+            clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios, laplace)
             # Clasificamos usando las tablas que ya han sido asignadas
             pred = clasificador.clasifica(testData, dataset.nominalAtributos, dataset.diccionarios)
             # Sumamos el error de esta iteracion al error total
@@ -115,6 +115,7 @@ class ClasificadorNaiveBayes(Clasificador):
                             count = np.sum((datosTrain[:,i]==value ) & (datosTrain[:,-1]==clase))
                             if count == 0 and laplace == True:
                                 laplaceNeedsToBeApplied = True
+                                #print('Laplace correction will be applied because no data with class ', clase, ' and ', i, 'th attribute with value ', value, ' was encountered in ', datosTrain)
                             classesTable[clase][value] = count
 
                     # If i-th attribute continuous:
@@ -146,7 +147,11 @@ class ClasificadorNaiveBayes(Clasificador):
             maxClass = ['Initial maximum class', 0]
             for clase in classes:
                 # Initialize the posteriori numerator as the priori probability for clase
-                verodotpriori = self.prioris[clase]
+                try:
+                    verodotpriori = self.prioris[clase]
+                except:
+                    print('Clases:', classes)
+                    print('Prioris:', prioris)
                 # Now we multiply by each P(attrN == valueofattrNinourdataelement | clase)
                 nAtributos = len(atributosDiscretos)-1
                 for i in range(nAtributos):
