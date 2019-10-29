@@ -28,7 +28,7 @@ class Clasificador:
     def error(self,datos,pred):
         numErr = 0
         numOk = 0
-        rowLen = len(datos[0])-1
+        rowLen = len(datos[0])
 
         # Aqui se compara la prediccion (pred) con las clases reales y se calcula el error
         # Suponiendo que pred es una lista con las predicciones, y que por defecto
@@ -36,7 +36,7 @@ class Clasificador:
         # comparamos cada entrada de 'pred' con la ultima entrada de cada fila
         # de 'datos' (que es la clase real)
         for i in range(0,len(pred)):
-            if pred[i] == datos[i][rowLen]:
+            if pred[i] == datos[i][rowLen-1]:
                 numOk = numOk + 1
             else:
                 numErr = numErr + 1
@@ -125,9 +125,7 @@ class ClasificadorNaiveBayes(Clasificador):
                         mean = np.mean(filteredColumn)
                         std = np.std(filteredColumn)
                         if math.isnan(std) or std==0:
-                            print('clase ', clase, 'atributo num', i) 
-                            print(filteredColumn)
-                            print(datosTrain[:, [i, -1]])
+                            raise ZeroDivisionError('The standard deviation is 0 or NaN for the data ', filteredColumn)
                         classesTable[clase] = norm(mean, std)
                 # If needed, we apply Laplace correction to the table: classesTable[clase][value] needs to be incremented for all clase, value
                 # Ineficiente a tope pero al menos no es larguisimo, nValuesxNclasses no deberia ser un valor muy grande
