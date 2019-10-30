@@ -25,11 +25,18 @@ class Clasificador:
     # Obtiene el numero de aciertos y errores para calcular la tasa de fallo
     # Entendemos que 'datos' y 'pred' son de la misma longitud para poder
     # realizar esta funcion sin controles
-    def error(self,datos,pred):
+    # Asumiendo que tenemos dos clases (que tendran valores 0 y 1 despues de
+    # haber sido 'traducidas' por el diccionario), damos al usuario la opcion
+    # de solicitar la matriz de confusion para el analisis ROC
+    # Denotamos a la clase 0 como negative, y 1 como positive
+    def error(self,datos,pred, ROC = False):
         numErr = 0
         numOk = 0
         rowLen = len(datos[0])
-
+        TN = 0
+        TP = 0
+        FN = 0
+        FP = 0
         # Aqui se compara la prediccion (pred) con las clases reales y se calcula el error
         # Suponiendo que pred es una lista con las predicciones, y que por defecto
         # será de la misma longitud que el numero de filas de 'datos'
@@ -37,18 +44,27 @@ class Clasificador:
         # de 'datos' (que es la clase real)
         for i in range(0,len(pred)):
             if pred[i] == datos[i][rowLen-1]:
+                if pred[i]==0 and ROC: # True Negative
+                    TN += 1
+                elif ROC: # True Positive
+                    TP += 1
                 numOk = numOk + 1
             else:
+                if pred[i] == 0 and ROC: # False Negative
+                    FN +=1
+                elif ROC: # False positive
+                    FP +=1
                 numErr = numErr + 1
 
+        confMatrix = np.array([[TP, FP],[FN, TN]])
         # devuelve un numero entre 0,1 que representa el error
         error = numErr/(numErr + numOk)
-        return error
+        return (error, confMatrix)
 
 
 
     # Realiza una clasificacion utilizando una estrategia de particionado determinada
-    def validacion(self,particionado,dataset,clasificador,seed=None, laplace = False):
+    def validacion(self,particionado,dataset,clasificador,seed=None, laplace = False, ROC = False):
 
         # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
         listaParticiones = particionado.creaParticiones(dataset.datos, seed)
@@ -56,6 +72,7 @@ class Clasificador:
         # y obtenemos el error en la particion de test i
         # Inicializamos error a 0
         error = 0.0
+        mConf = np.array([[0,0],[0,0]])
         for particion in listaParticiones:
             # Extraemos datos para el entrenamiento, y los de test
             trainData = dataset.extraeDatos(particion.indicesTrain)
@@ -65,12 +82,19 @@ class Clasificador:
             # Clasificamos usando las tablas que ya han sido asignadas
             pred = clasificador.clasifica(testData, dataset.nominalAtributos, dataset.diccionarios)
             # Sumamos el error de esta iteracion al error total
-            error += self.error(testData, pred)
+            err, mConfusion = self.error(testData, pred, ROC = True)  
+            error += err 
+            if ROC:
+                mConf += mConfusion 
         # Calculamos error medio a lo largo de todas las particiones.
         # En el caso de validacion simple, esto sera solo una particion
         error /= len(listaParticiones)
-
-        return error
+        
+        if not ROC:
+            return error
+        else:
+            mConf = mConf/len(listaParticiones)
+            return error, mConf
 
 ##############################################################################
 ##############################################################################
@@ -151,7 +175,7 @@ class ClasificadorNaiveBayes(Clasificador):
                     verodotpriori = self.prioris[clase]
                 except:
                     print('Clases:', classes)
-                    print('Prioris:', prioris)
+                    print('Prioris:', self.prioris)
                 # Now we multiply by each P(attrN == valueofattrNinourdataelement | clase)
                 nAtributos = len(atributosDiscretos)-1
                 for i in range(nAtributos):
