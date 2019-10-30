@@ -34,8 +34,8 @@ def discretiza(fileName):
     return matrixAux
 
 def pruebaScikit():
-    nRepeticiones = 15
-    seed = 17
+    nRepeticiones = 25
+    seed = 2
     dicc = dict()
     dicc['LENTILLAS'] = 'plantillasArquitectura/datos/conjunto_datos_lentillas.txt'
     dicc['TIC-TAC-TOE'] = 'plantillasArquitectura/datos/tic-tac-toe.data'
@@ -47,24 +47,30 @@ def pruebaScikit():
             porcentaje = j/10
             alphaNB = 1.0
             for i in range(2):
-                clf = MultinomialNB(alpha=alphaNB, fit_prior=False)            
-                trainMat, testMat = train_test_split(matrixAux, test_size=porcentaje, random_state=seed, shuffle=True)
-                train = (trainMat.T[:-1]).T
-                test = (testMat.T[:-1]).T
-                trainClasses = trainMat.T[-1:].ravel()
-                testClasses = testMat.T[-1:].ravel()
-                clf.fit(train, trainClasses)
-                scores = np.array([1-clf.score(test, testClasses) for k in range(nRepeticiones)])
-                mean, std = np.mean(scores), np.std(scores)
+                scores = []
+                for k in range(nRepeticiones):
+                    clf = MultinomialNB(alpha=alphaNB, fit_prior=False)            
+                    trainMat, testMat = train_test_split(matrixAux, test_size=porcentaje, random_state=seed, shuffle=True)
+                    train = (trainMat.T[:-1]).T
+                    test = (testMat.T[:-1]).T
+                    trainClasses = trainMat.T[-1:].ravel()
+                    testClasses = testMat.T[-1:].ravel()
+                    clf.fit(train, trainClasses)
+                    scores.append(1-clf.score(test, testClasses))
+                scoresnp = np.array(scores)
+                mean, std = np.mean(scoresnp), np.std(scoresnp)
                 print('\nv. simple,',porcentaje*100,'%, Laplace a ',alphaNB,'\nError medio:', mean, '\nDesviacion tipica:', std)
                 alphaNB = 1e-10
         for i in range(5,25,5):
             kf = KFold(n_splits=i, random_state=seed, shuffle=True)
             alphaNB = 1.0
-            clf = MultinomialNB(alpha=alphaNB, fit_prior=False)            
             for j in range(2):
-                # cv is the object that creates the folds in the data
-                cvs = np.array([1-np.mean(np.array(cross_val_score(clf, (matrixAux.T[:-1]).T, y=matrixAux.T[-1:].ravel(), cv=kf))) for k in range(nRepeticiones)])
+                clf = MultinomialNB(alpha=alphaNB, fit_prior=False)            
+                scores = []
+                for k in range(nRepeticiones):
+                    # cv is the object that creates the folds in the data
+                    scores.append(1-np.mean(np.array(cross_val_score(clf, (matrixAux.T[:-1]).T, y=matrixAux.T[-1:].ravel(), cv=kf))))
+                cvs = np.array(scores)
                 mean, std = np.mean(cvs), np.std(cvs)
                 print('\nv.  cruzada, K =',i,', Laplace a ',alphaNB,'\nError medio:', mean, '\nDesviacion tipica:', std)
                 alphaNB = 1e-10
