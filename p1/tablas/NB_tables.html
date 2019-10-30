@@ -1,0 +1,88 @@
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;border-color:#bbb;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#bbb;color:#594F4F;background-color:#E0FFEB;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#bbb;color:#493F3F;background-color:#9DE0AD;}
+.tg .tg-canc{background-color:#91ffb5;font-family:Georgia, serif !important;;border-color:#bbbbbb;text-align:left;vertical-align:top}
+.tg .tg-1puz{font-family:Georgia, serif !important;;border-color:#bbbbbb;text-align:center;vertical-align:top}
+.tg .tg-mlwj{font-family:Georgia, serif !important;;background-color:#91ffb5;border-color:#bbbbbb;text-align:center;vertical-align:top}
+.tg .tg-ytq2{font-family:Georgia, serif !important;;background-color:#ffffff;border-color:#ffffff;text-align:left;vertical-align:top}
+.tg .tg-wuod{background-color:#ffffff;font-family:Georgia, serif !important;;border-color:#ffffff;text-align:left;vertical-align:top}
+.tg .tg-kzty{background-color:#91ffb5;font-family:Georgia, serif !important;;border-color:#bbbbbb;text-align:center;vertical-align:top}
+.tg .tg-n6tj{font-family:Georgia, serif !important;;border-color:#bbbbbb;text-align:left;vertical-align:top}
+.tg .tg-5dmk{background-color:#C2FFD6;font-family:Georgia, serif !important;;border-color:#bbbbbb;text-align:center;vertical-align:top}
+.tg .tg-2zce{background-color:#C2FFD6;font-family:Georgia, serif !important;;border-color:#bbbbbb;text-align:left;vertical-align:top}
+</style>
+<table class="tg">
+  <tr>
+    <th class="tg-ytq2"></th>
+    <th class="tg-1puz" rowspan="2"><br>Corrección <br>de Laplace</th>
+    <th class="tg-1puz" colspan="2">(mean, std)<br>Error<br>Validación<br>Simple</th>
+    <th class="tg-1puz" colspan="4">(mean, std)<br>Error<br>Validación <br>Cruzada</th>
+  </tr>
+  <tr>
+    <td class="tg-wuod"></td>
+    <td class="tg-kzty">20% </td>
+    <td class="tg-canc">30%</td>
+    <td class="tg-canc">K = 5</td>
+    <td class="tg-canc">K = 10</td>
+    <td class="tg-canc">K = 15</td>
+    <td class="tg-canc">K = 20</td>
+  </tr>
+  <tr>
+    <td class="tg-mlwj" rowspan="2"><br>Lenses</td>
+    <td class="tg-1puz">Sí</td>
+    <td class="tg-n6tj">(0.3, 0.06)</td>
+    <td class="tg-n6tj">(0.19, 0.07)</td>
+    <td class="tg-n6tj">(0.34, 0.03)</td>
+    <td class="tg-n6tj">(0.32, 0.03)</td>
+    <td class="tg-n6tj">(0.33, 0.006)</td>
+    <td class="tg-n6tj">(0.3, 0.02)</td>
+  </tr>
+  <tr>
+    <td class="tg-5dmk">No</td>
+    <td class="tg-2zce">(0.27, 0.01)</td>
+    <td class="tg-2zce">(0.29, 0.005)</td>
+    <td class="tg-2zce">(0.31, 0.003)</td>
+    <td class="tg-2zce">(0.3, 0.004)</td>
+    <td class="tg-2zce">(0.3, 0.004)</td>
+    <td class="tg-2zce">(0.28, 0.001)</td>
+  </tr>
+  <tr>
+    <td class="tg-mlwj" rowspan="2"><br>Tic-tac-toe</td>
+    <td class="tg-1puz">Sí</td>
+    <td class="tg-n6tj">(0.3, 0.01)</td>
+    <td class="tg-n6tj">(0.29, 0.002)</td>
+    <td class="tg-n6tj">(0.30, 8e-4)</td>
+    <td class="tg-n6tj">(0.30, 0.001)</td>
+    <td class="tg-n6tj">(0.30, 8e-4)</td>
+    <td class="tg-n6tj">(0.30, 0.001)</td>
+  </tr>
+  <tr>
+    <td class="tg-5dmk">No</td>
+    <td class="tg-2zce">(0.29, 0.001)</td>
+    <td class="tg-2zce">(0.29, 0.002)</td>
+    <td class="tg-2zce">(0.29, 3e-4)</td>
+    <td class="tg-2zce">(0.30, 1e-4)</td>
+    <td class="tg-2zce">(0.30, 1e-4)</td>
+    <td class="tg-2zce">(0.30, 3e-4)</td>
+  </tr>
+  <tr>
+    <td class="tg-mlwj" rowspan="2"><br>German</td>
+    <td class="tg-1puz">Sí</td>
+    <td class="tg-n6tj">(0.23, 0.009)</td>
+    <td class="tg-n6tj">(0.25, 0.004)</td>
+    <td class="tg-n6tj">(0.25, 4e-4)</td>
+    <td class="tg-n6tj">(0.25, 9e-4)</td>
+    <td class="tg-n6tj">(0.24, 0.002)</td>
+    <td class="tg-n6tj"></td>
+  </tr>
+  <tr>
+    <td class="tg-5dmk">No</td>
+    <td class="tg-2zce">(0.24, 0.001)</td>
+    <td class="tg-2zce">(0.25, 0.001)</td>
+    <td class="tg-2zce">(0.25, 2e-4)</td>
+    <td class="tg-2zce">(0.24, 2e-4)</td>
+    <td class="tg-2zce">(0.24, 3e-4)</td>
+    <td class="tg-2zce"></td>
+  </tr>
+</table>
