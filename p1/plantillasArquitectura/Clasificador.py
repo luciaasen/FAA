@@ -96,6 +96,30 @@ class Clasificador:
             mConf = mConf/len(listaParticiones)
             return error, mConf
 
+    def validacionROC(self,particionado,dataset,clasificador,seed=None, laplace = False, alpha = 0.5):
+        listaParticiones = particionado.creaParticiones(dataset.datos, seed)
+        # Inicializamos error a 0
+        error = 0.0
+        mConf = np.array([[0,0],[0,0]])
+        for particion in listaParticiones:
+            # Extraemos datos para el entrenamiento, y los de test
+            trainData = dataset.extraeDatos(particion.indicesTrain)
+            testData = dataset.extraeDatos(particion.indicesTest)
+            # Entrenamos datos (es decir, generamos tablas de Naive Bayes)
+            clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios, laplace)
+            # Clasificamos usando las tablas que ya han sido asignadas
+            pred = clasificador.clasificaROC(testData, dataset.nominalAtributos, dataset.diccionarios, alpha)
+            # Sumamos el error de esta iteracion al error total
+            err, mConfusion = self.error(testData, pred, ROC = True)  
+            error += err 
+            mConf += mConfusion 
+        # Calculamos error medio a lo largo de todas las particiones.
+        # En el caso de validacion simple, esto sera solo una particion
+        error /= len(listaParticiones)        
+        mConf = mConf/len(listaParticiones)
+        return error, mConf
+
+
 ##############################################################################
 ##############################################################################
 
@@ -202,7 +226,35 @@ class ClasificadorNaiveBayes(Clasificador):
             pred.append(maxClass[0])
         return pred
 
-
+    def clasificaROC(self, datosTest, atributosDiscretos, diccionario, alpha):
+        # A set with al classes
+        classes = diccionario[-1].values()
+        pr = dict()
+        # For each data
+        i = 0
+        for dato in datosTest:
+            pr[i] = dict()
+            # And for each class
+            for clase in classes:
+                vero = 1
+                j = 0
+                # We calculate the product or all veros
+                # of all attribute values in data, given the class
+                for value in dato[:-1]:
+                    if atributosDiscretos[j]: #Nominal
+                        nOccurrences = self.NBTables[j][clase][value]
+                        vero *= nOccurrences/sum(self.NBTables[j][clase].values())
+                    else:#Discreto
+                        vero *= self.NBTables[j][clase].pdf(value)
+                    j+=1
+                pr[i][clase] = vero
+            i+=1
+        # Positive class = 1: we get the probability for all data
+        # given the positive class, and normalize the vector
+        positiveProbs = np.array([pr[i][1] for i in range(len(datosTest))])
+        positiveProbs /= np.linalg.norm(positiveProbs)
+        pred = [1 if prob > alpha else 0 for prob in positiveProbs]
+        return pred 
 ##############################################################################
 
 class ClasificadorKNN(Clasificador):
