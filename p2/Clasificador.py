@@ -64,7 +64,7 @@ class Clasificador:
 
 
     # Realiza una clasificacion utilizando una estrategia de particionado determinada
-    def validacion(self,particionado,dataset,clasificador,seed=None, laplace = False, ROC = False):
+    def validacion(self,particionado,dataset,clasificador,seed=None, ROC = False):
 
         # Creamos las particiones siguiendo la estrategia llamando a particionado.creaParticiones
         listaParticiones = particionado.creaParticiones(dataset.datos, seed)
@@ -78,7 +78,7 @@ class Clasificador:
             trainData = dataset.extraeDatos(particion.indicesTrain)
             testData = dataset.extraeDatos(particion.indicesTest)
             # Entrenamos datos (es decir, generamos tablas de Naive Bayes)
-            clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios, laplace)
+            clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios)
             # Clasificamos usando las tablas que ya han sido asignadas
             pred = clasificador.clasifica(testData, dataset.nominalAtributos, dataset.diccionarios)
             # Sumamos el error de esta iteracion al error total
@@ -96,7 +96,7 @@ class Clasificador:
             mConf = mConf/len(listaParticiones)
             return error, mConf
 
-    def validacionROC(self,particionado,dataset,clasificador,seed=None, laplace = False, alpha = 0.5):
+    def validacionROC(self,particionado,dataset,clasificador,seed=None, alpha = 0.5):
         listaParticiones = particionado.creaParticiones(dataset.datos, seed)
         # Inicializamos error a 0
         error = 0.0
@@ -106,7 +106,7 @@ class Clasificador:
             trainData = dataset.extraeDatos(particion.indicesTrain)
             testData = dataset.extraeDatos(particion.indicesTest)
             # Entrenamos datos (es decir, generamos tablas de Naive Bayes)
-            clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios, laplace)
+            clasificador.entrenamiento(trainData, dataset.nominalAtributos, dataset.diccionarios, self.laplace)
             # Clasificamos usando las tablas que ya han sido asignadas
             pred = clasificador.clasificaROC(testData, dataset.nominalAtributos, dataset.diccionarios, alpha)
             # Sumamos el error de esta iteracion al error total
@@ -126,11 +126,10 @@ class Clasificador:
 ##############################################################################
 
 class ClasificadorNaiveBayes(Clasificador):
-
-
+    def __init__(self, laplace = False):
+        self.laplace = laplace
     
-    pass
-    def entrenamiento(self,datosTrain,atributosDiscretos,diccionario, laplace=False):
+    def entrenamiento(self,datosTrain,atributosDiscretos,diccionario):
         # There are len - 1 attributes, since last element in atributosDiscretos, the class, does not correspond to a proper attribute
         nAtributos = len(atributosDiscretos)-1
         # We extract a set with all classes in the data
@@ -161,7 +160,7 @@ class ClasificadorNaiveBayes(Clasificador):
                             # We count the number of elements of class clase out of the elements
                             # where the i-th attribute has value value
                             count = np.sum((datosTrain[:,i]==value ) & (datosTrain[:,-1]==clase))
-                            if count == 0 and laplace == True:
+                            if count == 0 and self.laplace == True:
                                 laplaceNeedsToBeApplied = True
                                 #print('Laplace correction will be applied because no data with class ', clase, ' and ', i, 'th attribute with value ', value, ' was encountered in ', datosTrain)
                             classesTable[clase][value] = count
@@ -277,26 +276,31 @@ class ClasificadorKNN(Clasificador):
 ##############################################################################
 ##############################################################################
 
-class ClasificadorRegresionLogistica:
-    def entrenamiento(self, datosTrain, atributosDiscretos, diccionario, nEpocas, cteApr):
+class ClasificadorRegresionLogistica(Clasificador):
+    def __init__(self, cteApr=1, nEpocas=5):
+        self.cteApr = cteApr
+        self.nEpocas = nEpocas 
+
+    def entrenamiento(self, datosTrain, atributosDiscretos, diccionario):
         self.w = np.random.rand(len(atributosDiscretos)) - 0.5
-        for epoca in range(nEpocas):
+        for epoca in range(self.nEpocas):
             for dato in datosTrain:
-                x = np._append_const([1], dato[:-1])
+                x = np.append([1], dato[:-1])
                 clase = 1 if dato[-1] == 1 else 0
                 # w = w - nu*(sigm(wx)-clase)x
                 # If dot product is too low, 1/ e^inf could incur in numerical values
                 # So we replace 1/e^inf with 0
-                sigarg = np.dot(w,x)
+                sigarg = np.dot(self.w,x)
                 sig = sigmoidal(sigarg) if sigarg > -600 else 0
-                coefficient = cteApr * (sig - clase)
+                coefficient = self.cteApr * (sig - clase)
                 self.w -= coefficient*x
 
     def clasifica(self, datosTest, atributosDiscretos, diccionario):
         pred = []
         for data in datosTest:
             x = np.append([1], data[:-1])
-            vero = sigmoidal(np.dot(self.w,x))
+            sigarg = np.dot(self.w,x)
+            vero = sigmoidal(sigarg) if sigarg > -600 else 0
             pred.append( 1 if vero > 0.5 else 0)
         return pred  
 
