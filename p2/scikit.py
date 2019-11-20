@@ -4,7 +4,9 @@ from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.preprocessing import KBinsDiscretizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
+import warnings
 
+warnings.filterwarnings("ignore")
 def discretiza(fileName):
     dataset=d.Datos(fileName)
     # Para que funcione con scikit hay que discretizar los atributos continuos
