@@ -35,10 +35,7 @@ def discretiza(fileName):
     matrixAux = matrixAux.T
     return matrixAux
 
-def logReg(fileName, epocas = [1,2,4,6,8] , ctesApr = [(i+1)/5 for i in range(5)]  , nRepeticionesCruzada = 5, nRepeticionesSimple = 20):
-
-    porcentajes = [0.25,0.30]
-    ks = [5,10,15]
+def logReg(fileName, epocas = [1,2,4,6,8] , ctesApr = [(i+1)/5 for i in range(5)]  , nRepeticionesCruzada = 5, nRepeticionesSimple = 20, porcentajes = [0.25,0.30], ks = [5,10,15]):
 
     matrixAux = discretiza(fileName)
     print('\n', fileName, '\nSGD')
