@@ -1,5 +1,0 @@
-En la carpeta de entrega habria que
-- hacer una copia del FAAP1....ipynnb,
-- hacer una copia de plantillasArquitectura completo
-- el html del notebook
-- creo que ya esta

@@ -168,6 +168,7 @@ class ClasificadorNaiveBayes(Clasificador):
                     # If i-th attribute continuous:
                     else:
                         # We create an array with the i-th attribute values of data where class == clase
+
                         filteredColumn = datosTrain[datosTrain[:,-1]==clase][:, i]
                         # We extract mean and variance of the i-th column
                         mean = np.mean(filteredColumn)
