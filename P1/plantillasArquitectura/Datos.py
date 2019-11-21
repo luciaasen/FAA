@@ -4,7 +4,7 @@ class Datos:
 
   TiposDeAtributos=('Continuo','Nominal')
 
-  def __init__(self, nombreFichero, oneHot = False):
+  def __init__(self, nombreFichero):
     f = open( nombreFichero, "r")
     nDatos = int(f.readline()) # Unused?
     #Read attributes names line and store it
@@ -66,53 +66,7 @@ class Datos:
 
     #We change the matrix datatype to Float
     self.datos = self.datos.astype(dtype=float)
-    
-    if oneHot == True:
-        # Create new matrix with desired dimensions
-        # Binary attributes (len = 2) must count as an extra column and not as 2 new columns.
-        newNCols = sum([1 if len(diccionario) == 2 else max(1, len(diccionario)) for diccionario in self.diccionarios])
-        newDatos = np.empty([len(datos), newNCols])
-
-        # initialize a new atributos array
-        # Maybe in the future it is also necessary to update other self.thingies?
-        # self.dictionaries would be an array of empty dicts, idk. It might be necessary at some point
-        nombreAtributos = []
-        # Lets update nominalAtributos as well.
-        nominalAtributos = []
-
-        newi = 0
-        for oldi in range(len(self.nominalAtributos)):
-            if self.nominalAtributos[oldi] == False:
-                # update matrix
-                newDatos[:, newi] = self.datos[:, oldi]
-                # update nombreAtributos, nominalAtributos
-                nombreAtributos.append(self.nombreAtributos[oldi])
-                nominalAtributos.append(self.nominalAtributos[oldi])
-                newi += 1
-            else:
-                keys =  self.diccionarios[oldi].keys()
-                if len(keys) == 2: # Only 2 arguments: binary attribute -> no extra column
-                    # update matrix
-                    value = self.diccionarios[oldi][list(keys)[0]]
-                    newcol = [1 if self.datos[k, oldi] == value else 0 for k in range(len(self.datos))]
-                    newDatos[:, newi] = newcol 
-                    # update nombreAtributos, nominalAtributos
-                    nombreAtributos.append(self.nombreAtributos[oldi] + '_' + list(keys)[0]) 
-                    nominalAtributos.append(True)
-                    newi += 1
-                else:
-                    for key in keys:
-                        # update matrix
-                        value = self.diccionarios[oldi][key]
-                        newcol = [1 if self.datos[k, oldi] == value else 0 for k in range(len(self.datos))]
-                        newDatos[:, newi] = newcol 
-                        # update nombreAtributos, nominalAtributos
-                        nombreAtributos.append(self.nombreAtributos[oldi] + '_' + key) 
-                        nominalAtributos.append(True)
-                        newi += 1
-        self.datos = newDatos
-        self.nombreAtributos = nombreAtributos
-        self.nominalAtributos = nominalAtributos
+    # print(self.datos)
     f.close()
 
   #Recibe en idx una lista de indices que extraer y devolver de la
