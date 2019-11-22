@@ -1,5 +1,5 @@
 from abc import ABCMeta,abstractmethod
-import math 
+import math
 import numpy as np
 from scipy.stats import norm
 class Clasificador:
@@ -82,14 +82,14 @@ class Clasificador:
             # Clasificamos usando las tablas que ya han sido asignadas
             pred = clasificador.clasifica(testData, dataset.nominalAtributos, dataset.diccionarios)
             # Sumamos el error de esta iteracion al error total
-            err, mConfusion = self.error(testData, pred, ROC = True)  
-            error += err 
+            err, mConfusion = self.error(testData, pred, ROC = True)
+            error += err
             if ROC:
-                mConf += mConfusion 
+                mConf += mConfusion
         # Calculamos error medio a lo largo de todas las particiones.
         # En el caso de validacion simple, esto sera solo una particion
         error /= len(listaParticiones)
-        
+
         if not ROC:
             return error
         else:
@@ -110,12 +110,12 @@ class Clasificador:
             # Clasificamos usando las tablas que ya han sido asignadas
             pred = clasificador.clasificaROC(testData, dataset.nominalAtributos, dataset.diccionarios, alpha)
             # Sumamos el error de esta iteracion al error total
-            err, mConfusion = self.error(testData, pred, ROC = True)  
-            error += err 
-            mConf += mConfusion 
+            err, mConfusion = self.error(testData, pred, ROC = True)
+            error += err
+            mConf += mConfusion
         # Calculamos error medio a lo largo de todas las particiones.
         # En el caso de validacion simple, esto sera solo una particion
-        error /= len(listaParticiones)        
+        error /= len(listaParticiones)
         mConf = mConf/len(listaParticiones)
         return error, mConf
 
@@ -128,7 +128,7 @@ class Clasificador:
 class ClasificadorNaiveBayes(Clasificador):
     def __init__(self, laplace = False):
         self.laplace = laplace
-    
+
     def entrenamiento(self,datosTrain,atributosDiscretos,diccionario):
         # There are len - 1 attributes, since last element in atributosDiscretos, the class, does not correspond to a proper attribute
         nAtributos = len(atributosDiscretos)-1
@@ -148,7 +148,7 @@ class ClasificadorNaiveBayes(Clasificador):
                 # For each attribute, a dictionary with all classes as values
                 classesTable = dict()
 
-                laplaceNeedsToBeApplied = False 
+                laplaceNeedsToBeApplied = False
                 for clase in classes:
                     # We extract a set with all attribute values for the i-th attribute
                     attrValues = diccionario[i].values()
@@ -254,22 +254,76 @@ class ClasificadorNaiveBayes(Clasificador):
         positiveProbs = np.array([pr[i][1] for i in range(len(datosTest))])
         positiveProbs /= np.linalg.norm(positiveProbs)
         pred = [1 if prob > alpha else 0 for prob in positiveProbs]
-        return pred 
+        return pred
 ##############################################################################
 
-class ClasificadorKNN(Clasificador):
+class ClasificadorVecinosProximos(Clasificador):
+    def __init__(self, k = 1, weight = False, max_weight = 100):
+        self.k = k
+        self.weight = weight
+        self.max_weight = max_weight
 
-
-
-    # TODO: implementar
+    # KNN no requiere entrenamiento realmente.
     def entrenamiento(self,datostrain,atributosDiscretos,diccionario):
-        pass
+        self.trainData = datostrain
+
+    # Funcion que clasifica un vector
+    # v:    vector a clasificar (fila de la matriz)
+    # datos:    matriz sobre la que clasificar
+    # atributosDiscretos:   array bool con la indicatriz de los atributos nominales
+    # k:    numero de vecinos proximos
+    # descripcion:  1 - calcular distancia del vector v con respecto a cada
+    # return:   clase predicha
+    #                   fila de la matriz datos
+    #               2 - ordenar por distancias (menor a mayor)
+    #               3 - obtener las k distancias menores
+    #               4 - obtener las clases que aparecen
+    #               5 - sin pesos:  predecir la clase que más aparece
+    #                   con pesos:  para cada distancia obtener el inverso
+    #                               para cada clase sumar esos inversos
+    #                               predecir la mayor
+    #                               (sirve para corregir en caso de que haya
+    #                               mas vecinos proximos a grandes distancias)
+
+    def clasificaFila(self, v, datos, atributosDiscretos, k, weight=False):
+        dists = [(row[-1], distancia(v, row[:-1], atributosDiscretos[:-1])) for row in datos]
+        dists = sorted(dists, key=lambda elem: elem[1])
+        dists = dists[:k]
+        classes = [x[0] for x in dists]
+        if weight == False:
+            clase = max(set(classes), key=classes.count)
+        else:
+            inv_dists = [(x[0], 1/x[1]) if x[1] != 0 else self.max_weight*k for x in dists]
+            weighted_classes = []
+            for x in set(classes):
+                weights = [d[1] if x == d[0] else 0 for d in inv_dists]
+                weighted_classes.append((x, sum(weights)))
+            clase = max(weighted_classes, key=lambda x: x[1])[0]
+        return clase
 
 
-
-    # TODO: implementar
     def clasifica(self,datostest,atributosDiscretos,diccionario):
-        pass
+        datos_n = self.normalizarDatos(datostest, atributosDiscretos)
+        pred = [self.clasificaFila(row[:-1], self.trainData, atributosDiscretos, self.k, self.weight) for row in datostest]
+        return pred
+
+
+    # Funcion que calcula las medias y las desviaciones tipicas de los
+    # atributos Continuos de la matriz datos
+    # datos:    matriz de datos continuos y discretos
+    # atributosDiscretos:   array bool con la indicatriz de los atributos nominales
+    def calcularMediasDesv(self,datos,atributosDiscretos):
+        return [True if atr == True else (np.mean(col), np.std(col)) for col, atr in zip(datos.T,atributosDiscretos)]
+
+    # Funcion que normaliza los atributos continuos de la matriz datos
+    # datos:    matriz de datos continuos y discretos
+    # atributosDiscretos:   array bool con la indicatriz de los atributos nominales
+    def normalizarDatos(self,datos,atributosDiscretos):
+        avg = 0
+        std = 1
+        med_desv = self.calcularMediasDesv(datos,atributosDiscretos)
+        datos_normalizados = np.array([x if atr == True else (x - atr[avg])/atr[std] for x,atr in zip(datos.T, med_desv)])
+        return datos_normalizados.T
 
 
 
@@ -280,7 +334,7 @@ class ClasificadorKNN(Clasificador):
 class ClasificadorRegresionLogistica(Clasificador):
     def __init__(self, cteApr=1, nEpocas=15):
         self.cteApr = cteApr
-        self.nEpocas = nEpocas 
+        self.nEpocas = nEpocas
 
     def entrenamiento(self, datosTrain, atributosDiscretos, diccionario):
         self.w = np.random.rand(len(atributosDiscretos)) - 0.5
@@ -303,7 +357,7 @@ class ClasificadorRegresionLogistica(Clasificador):
             sigarg = np.dot(self.w,x)
             vero = sigmoidal(sigarg) if sigarg > -600 else 0
             pred.append( 1 if vero > 0.5 else 0)
-        return pred  
+        return pred
 
 
 
@@ -333,4 +387,3 @@ def prioris(datosTrain):
 # Funcion para calcular la sigmoidal
 def sigmoidal(t):
   return 1 / (1 + math.exp(-t))
-
