@@ -387,3 +387,19 @@ def prioris(datosTrain):
 # Funcion para calcular la sigmoidal
 def sigmoidal(t):
   return 1 / (1 + math.exp(-t))
+
+# Funcion para calcular distancia entre dos vectores
+# v1,v2: vectores de igual longitud
+# atributes: vector de atributos
+# si el atributo es nominal, se utiliza la distancia de Manhattan
+def distancia(v1, v2, atributes):
+  dst = []
+  for x,y,atr in zip(v1,v2,atributes):
+      if atr == True:
+          if x == y:
+              dst.append(0)
+          else:
+              dst.append(1)
+      else:
+          dst.append((x - y)**2)
+  return math.sqrt(sum(dst))
