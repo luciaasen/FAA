@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.preprocessing import KBinsDiscretizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
+from sklearn.neighbors import KNeighborsClassifier
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -35,6 +36,48 @@ def discretiza(fileName):
     matrixAux = matrixAux.T
     return matrixAux
 
+def knn(fileName, nVecinos = [4], weight = 'uniform', nRepeticionesSimple = 5, nRepeticionesCruzada = 20, porcentajes = [0.25, 0.30], ks = [5,10,15] ):
+    matrixAux = discretiza(fileName)
+    print('\n KNN de scikit en fichero ', fileName)
+    # Validacion simple
+    seed = 17
+    for porcentaje in porcentajes:
+        for num in nVecinos:
+            errors = []
+            clf = KNeighborsClassifier(num, weights = weight)
+            for i in range(nRepeticionesSimple):
+                trainMat, testMat = train_test_split(matrixAux, test_size=porcentaje, random_state=seed, shuffle=True)
+                train = (trainMat.T[:-1]).T
+                test = (testMat.T[:-1]).T
+                trainClasses = trainMat.T[-1:].ravel()
+                testClasses = testMat.T[-1:].ravel()
+                
+                clf.fit(train, trainClasses)
+                clf.score(test, testClasses)
+                errors.append(1-clf.score(test,testClasses))
+                seed += 1
+            errorsnp = np.array(errors)
+            mean, std = np.mean(errors), np.std(errors)
+            print('\nVSimple,', porcentaje,'%, ', num, 'vecinos\nError medio:', mean, '\nDesviacion tipica:', std)
+    # Validacion cruzada
+    for k in ks:
+        for  num in nVecinos:
+            errors = []
+            clf = KNeighborsClassifier(num, weights = weight)
+            for i in range(nRepeticionesCruzada):  
+                kf = KFold(n_splits=k, random_state=seed, shuffle=True)
+                errors.append(1-np.mean(np.array(cross_val_score(clf, (matrixAux.T[:-1]).T, y=matrixAux.T[-1:].ravel(), cv=kf))))
+                seed += 1
+            errorsnp = np.array(errors)
+            mean, std = np.mean(errors), np.std(errors)
+            print('\nVCruzada K =,', k, num, 'vecinos\nError medio:', mean, '\nDesviacion tipica:', std)
+
+
+                
+    
+
+
+
 def logReg(fileName, epocas = [1,2,4,6,8] , ctesApr = [(i+1)/5 for i in range(5)]  , nRepeticionesCruzada = 5, nRepeticionesSimple = 20, porcentajes = [0.25,0.30], ks = [5,10,15]):
 
     matrixAux = discretiza(fileName)
@@ -60,6 +103,7 @@ def logReg(fileName, epocas = [1,2,4,6,8] , ctesApr = [(i+1)/5 for i in range(5)
                 errorsnp = np.array(errors)
                 mean, std = np.mean(errors), np.std(errors)
                 print('\nVSimple,', porcentaje,'%, CteApr ', cteApr, 'Epocas ', nEpocas, '\nError medio:', mean, '\nDesviacion tipica:', std)
+    # Validacion cruzada
     for k in ks:
         for cteApr in ctesApr:
             for nEpocas in epocas:
