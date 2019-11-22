@@ -293,7 +293,7 @@ class ClasificadorVecinosProximos(Clasificador):
         if weight == False:
             clase = max(set(classes), key=classes.count)
         else:
-            inv_dists = [(x[0], 1/x[1]) if x[1] != 0 else self.max_weight*k for x in dists]
+            inv_dists = [(x[0], 1/x[1]) if x[1] != 0 else (x[0], self.max_weight*k) for x in dists]
             weighted_classes = []
             for x in set(classes):
                 weights = [d[1] if x == d[0] else 0 for d in inv_dists]
