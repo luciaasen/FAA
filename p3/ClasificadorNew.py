@@ -396,9 +396,9 @@ class ClasificadorGenetico(Clasificador):
         self.calcularFitnessPoblacion()
         for i in range(0, self.nEpocas):
             print("Epoca ", i, "/", self.nEpocas)
-            # print("\n\nPob1 == ", self.poblacion)
+            print("\n\nPob1 == ", self.poblacion)
             self.evolucionaPoblacion()
-            # print("\n\nPob2 == ", self.poblacion)
+            print("\n\nPob2 == ", self.poblacion)
 
         self.poblacion = sorted(self.poblacion, key=lambda elem: elem[1])
 
@@ -429,25 +429,36 @@ class ClasificadorGenetico(Clasificador):
             # cr = elem[0]
             # elem[1] = cr.calcularFitness(datos=self.train)
 
+    # asume que la poblacion esta ordenada de menor a mayor
+    def ruletaIndices(self):
+        total = sum([0 if fit[1] is None else fit[1] for fit in self.poblacion])
+        choice = r.uniform(0,total)
+        suma = 0
+        for i in range(0, self.tamPoblacion):
+            fit = self.poblacion[i][1]
+            suma += fit
+            if suma >= choice:
+                return self.poblacion[i]
+
+
+
+
     # de una poblacion calcula el fitness de cada individuo
     # proporcional al fitness devuelve una lista con los progenitores
     def seleccionProgenitores(self):
-        total = sum([0 if fit[1] is None else fit[1] for fit in self.poblacion])
-        if total == 0:
-            return self.poblacion.copy()
-        minimo = total/(2*self.tamPoblacion)
-        progenitores = []
-        for el in self.poblacion:
-            if round(el[1],2) >= minimo:
-                crs = [el] *round((el[1]/total)*self.tamPoblacion)
-                progenitores.extend(crs)
+        numProgenitores = self.tamPoblacion * self.pCruce
+        numProgenitores += numProgenitores%2
+        progenitores = [[self.ruletaIndices(), self.ruletaIndices()] for i in range(0, numProgenitores/2)]
         return progenitores
+
 
     # Cruza los cromosomas de los progenitores de dos en dos
     # con probabilidad pCruce
     def cruzarProgenitores(self, progenitores):
-        max = len(progenitores)
-        indices = [i for i in range(0,max)]
+        numPares = len(progenitores)
+        cruces = [pr[0][0].cruzar(pr[0][1]) for pr in progenitores]
+        cruces = [progenitores[i][0][0].cruzar(progenitores[i][1][0]) for i in range(0, numPares)]
+
         while len(indices) > 1:
             index1 = r.choice(indices)
             indices.remove(index1)
@@ -471,16 +482,17 @@ class ClasificadorGenetico(Clasificador):
                 p[1] = None
 
     # selecciona a los mejores cromosomas
-    def elitismo(self, progenitores):
-        self.calcularFitnessPoblacion(poblacion=progenitores)
-        progenitores.sort(key=lambda elem: elem[1])
+    def elitismo(self):
+        # self.calcularFitnessPoblacion(poblacion=progenitores)
+        self.poblacion.sort(key=lambda elem: elem[1])
         nSup = round(self.pElit * self.tamPoblacion)
         if nSup < 1:
             nSup = 1
-        supervivientes = [el for el in progenitores[-nSup:]]
+        supervivientes = [el for el in self.poblacion[-nSup:]]
         return supervivientes
 
     def evolucionaPoblacion(self):
+        nextGen = self.elitismo()
         progenitores = self.seleccionProgenitores()
         self.cruzarProgenitores(progenitores)
         self.mutarProgenitores(progenitores)
