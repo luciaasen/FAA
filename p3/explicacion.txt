@@ -1,0 +1,32 @@
+Clase Clasificador --> implementar clasificador_genetico
+
+                        Entrenamiento (crear la poblacion para el numero de epocas) Train
+                          Creo Una poblacion de X cromosomas aleatorio
+                          p' Seleccionar progenitores --> lo del examen
+                          P' Cruzar
+                          P' Mutar
+                          Elitismo eliminar bottom 5% de P y sustituir por top 5% de P'
+
+
+
+                        Clasifica:
+                            Coger datos de test
+
+
+Clase Cromosoma (para codificar data)
+  atr --> numero de reglas
+   --> longitud de regla ()
+  - cruzar
+  - mutar
+  - fitness
+
+
+
+
+
+Main -->
+
+  dataset = datos(balalal)
+  clf = clasificador_genetico
+  estrategia = ep.ValidacionSimple() (train/test)
+  errors.append(clf.validacion(estrategia, dataset, clf))
