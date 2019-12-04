@@ -373,7 +373,6 @@ class ClasificadorGenetico(Clasificador):
         self.pElit = pElit
         self.maxReglas = maxReglas
         self.seed = seed
-        r.seed(self.seed)
 
     def entrenamiento(self, datosTrain, atributosDiscretos, diccionario):
         # Paso 1: Crear una poblacion aleatoria
@@ -384,21 +383,26 @@ class ClasificadorGenetico(Clasificador):
         nAtributos = len(diccionario) - 1
         lensAtributos = [len(diccionario[i]) for i in range(0, nAtributos)]
         lenRegla = sum(lensAtributos) + 1
+        r.seed(self.seed)
         self.poblacion = [[cr.Cromosoma(r.randint(1,self.maxReglas), lensAtributos), 0] for i in range(0,self.tamPoblacion)]
         # Codificamos los datos de entrenamiento para ahorrar tiempo
         temp_cr = self.poblacion[0][0]
         if datosTrain.dtype is not int:
             datosTrain = datosTrain.astype(dtype=int)
-        encoded_train = np.array([np.append(temp_cr.encode(row), 0) for row in datosTrain[:,:-1]])
+        encoded_train = np.array([np.append(temp_cr.encode(row), None) for row in datosTrain[:,:-1]])
         clases = datosTrain[:,-1]
         encoded_train[:,-1] = clases
         self.train = encoded_train
+        # print("\nBefore:")
+        # print(self.poblacion)
         self.calcularFitnessPoblacion()
         for i in range(0, self.nEpocas):
             print("Epoca ", i, "/", self.nEpocas)
             self.evolucionaPoblacion()
 
         self.poblacion = sorted(self.poblacion, key=lambda elem: elem[1])
+        # print("\nAfter:")
+        # print(self.poblacion)
 
 
     def clasifica(self, datosTest, atributosDiscretos, diccionario):
@@ -424,20 +428,18 @@ class ClasificadorGenetico(Clasificador):
             if elem[1] is None:
                 cr = elem[0]
                 elem[1] = cr.calcularFitness(datos=self.train)
-            # cr = elem[0]
-            # elem[1] = cr.calcularFitness(datos=self.train)
 
     # de una poblacion calcula el fitness de cada individuo
     # proporcional al fitness devuelve una lista con los progenitores
     def seleccionProgenitores(self):
-        total = sum([0 if fit[1] is None else fit[1] for fit in self.poblacion])
+        total = sum([fit[1] for fit in self.poblacion])
         if total == 0:
-            return self.poblacion.copy()
+            return np.copy(self.poblacion)
         minimo = total/(2*self.tamPoblacion)
         progenitores = []
         for el in self.poblacion:
             if round(el[1],2) >= minimo:
-                crs = [el] *round((el[1]/total)*self.tamPoblacion)
+                crs = [el]*round((el[1]/total)*self.tamPoblacion)
                 progenitores.extend(crs)
         return progenitores
 
@@ -470,12 +472,13 @@ class ClasificadorGenetico(Clasificador):
 
     # selecciona a los mejores cromosomas
     def elitismo(self, progenitores):
-        self.calcularFitnessPoblacion(poblacion=progenitores)
-        progenitores.sort(key=lambda elem: elem[1])
+        self.calcularFitnessPoblacion(progenitores)
+        progenitores = sorted(progenitores, key=lambda elem: elem[1])
         nSup = round(self.pElit * self.tamPoblacion)
         if nSup < 1:
             nSup = 1
         supervivientes = [el for el in progenitores[-nSup:]]
+        # print("SURVIVE: ", supervivientes)
         return supervivientes
 
     def evolucionaPoblacion(self):
@@ -484,8 +487,14 @@ class ClasificadorGenetico(Clasificador):
         self.mutarProgenitores(progenitores)
         supervivientes = self.elitismo(progenitores)
         self.poblacion = sorted(self.poblacion, key=lambda elem: elem[1])
+        # print("\nBefore:")
+        # print(self.poblacion)
         nElim = len(supervivientes)
+        # print("\nGoes:")
+        # print(self.poblacion[:nElim])
         self.poblacion[:nElim] = supervivientes
+        # print("\nAfter:")
+        # print(self.poblacion)
 
 
 

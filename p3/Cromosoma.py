@@ -132,3 +132,7 @@ class Cromosoma:
             enc[dato[i]] = 1
             encoded.extend(enc)
         return np.array(encoded)
+
+
+    def __str__(self):
+        return str(self.reglas)

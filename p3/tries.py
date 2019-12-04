@@ -152,15 +152,16 @@ import EstrategiaParticionado as ep
 # print("lenAtributos = [3, 3, 3...3] --> ", lensAtributos)
 # print("lenRegla = 3 + 3 ... + 3== 28 --> ", lenRegla)
 
-# dataset=Datos('DatasetEjemplo/tic-tac-toe.data')
-dataset=Datos('DatasetEjemplo/ejemplo1.data')
+dataset=Datos('DatasetEjemplo/tic-tac-toe.data')
+# dataset=Datos('DatasetEjemplo/ejemplo1.data')
+# dataset=Datos('DatasetEjemplo/ejemplo2.data')
 dicc = dataset.diccionarios
 
 # datosTrain = dataset.datos[:50]
 # print(datosTrain)
-gen = cl.ClasificadorGenetico(tamPoblacion=100, nEpocas=100, seed=3)
+gen = cl.ClasificadorGenetico(tamPoblacion=100, nEpocas=10, seed=3)
 errors = []
-for i in range(5):
+for i in range(2):
     es = ep.ValidacionSimple(20)
     errors.append(gen.validacion(es,dataset,gen))
 errorsnp = np.array(errors)
