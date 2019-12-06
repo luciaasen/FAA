@@ -51,8 +51,8 @@ class Cromosoma:
     #   C1' = 000011001100 C2' = 110111
     def cruzar(self, c2, p=-1):
         if p == -1:
-            max = min(len(self.reglas), len(c2.reglas)) - 1
-            p = r.randint(0, max)
+            max_len = min(len(self.reglas), len(c2.reglas)) - 1
+            p = r.randint(0, max_len)
 
         c11 = np.copy(self.reglas[:p])
         c21 = np.copy(c2.reglas[:p])
@@ -82,10 +82,6 @@ class Cromosoma:
         predicciones = {0: 0, 1: 0}
         for n in range(0, self.nReglas):
             regla = self.reglas[n*self.lenRegla: (n + 1)*self.lenRegla]
-            # print("REGLA == ", regla)
-            # print("REGLA[:-1] == ", regla[:-1])
-            # print("Dato == ", dato)
-            # print("DOT == ", np.dot(dato, regla[:-1]))
             # para que una regla 'reconozca' el dato
             # el producto escalar tiene que dar el numero de atributos
             if np.dot(dato, regla[:-1]) == nAtributos:
@@ -99,13 +95,13 @@ class Cromosoma:
     # func --> funcion con la que calcular el fitness
     # datos --> matriz de datos codificada donde la ultima columna es la clase de los datos
     # por defecto suma los bits del cromosoma y devuelve eso
-    def calcularFitness(self, func=None, datos=None):
+    def calcularFitness(self, func=None, datos=None, default=-1):
         if datos is not None:
             # ultima columna de datos --> clases
             clases = datos[:,-1]
             # resto de las columnas de datos
             data = datos[:,:-1]
-            pred = [self.predict(row) for row in data]
+            pred = [self.predict(row, default=default) for row in data]
             aciertos = 0
             for prediccion, clase in zip(pred, clases):
                 if prediccion == clase:

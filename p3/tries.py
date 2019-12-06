@@ -1,8 +1,10 @@
-import Cromosoma as cr
+# import Cromosoma as cr
 from Datos import Datos
 import numpy as np
-import Clasificador as cl
+import ClasificadorNew as cl
 import EstrategiaParticionado as ep
+# import random as r
+# from copy import deepcopy
 
 ################################################################################################
 # Prueba de la clase Cromosoma
@@ -151,21 +153,117 @@ import EstrategiaParticionado as ep
 # print("nAtributos = 9 --> ", nAtributos)
 # print("lenAtributos = [3, 3, 3...3] --> ", lensAtributos)
 # print("lenRegla = 3 + 3 ... + 3== 28 --> ", lenRegla)
+################################################################################################
+################################################################################################
+# Test Clasificador
+# def testPob(lista=None):
+#     pob = [c[0] for c in lista]
+#     test = set(pob)
+#     if(len(test) != len(pob)):
+#         print("\nERROR")
+#         for el in test:
+#             pob.remove(el)
+#         print("CULPRITs == ", pob)
+#
+# c1 = cr.Cromosoma(3, [2,3,4]);
+# c2 = cr.Cromosoma(1, [2,3,4]);
+#
+# e1 = [c1, 3]
+# e2 = [c2, 3]
+#
+# e3 = [deepcopy(c2), 3]
+#
+# pob = [e1, e2, e3]
+#
+# e4 = deepcopy(pob[2])
+#
+# print(e1[0])
+# print(e2[0])
+# print(e3[0])
+# print(e4[0])
+# print("\n")
+# e1[0].cruzar(e2[0])
+# print(e1[0])
+# print(e2[0])
+# print(e3[0])
+# print(e4[0])
+# print("\n")
+# e3[0].mutar()
+# e3[0].mutar()
+# e3[0].mutar()
+# e3[0].mutar()
+# e3[0].mutar()
+# print(e1[0])
+# print(e2[0])
+# print(e3[0])
+# print(e4[0])
+# e2[0].cruzar(e3[0])
+# print(e1[0])
+# print(e2[0])
+# print(e3[0])
+# print(e4[0])
+#
+#
+#
 
-# dataset=Datos('DatasetEjemplo/tic-tac-toe.data')
+
+
+# gen = cl.ClasificadorGenetico(tamPoblacion=100, nEpocas=30, seed=3)
+# # dataset=Datos('DatasetEjemplo/tic-tac-toe.data')
 # dataset=Datos('DatasetEjemplo/ejemplo1.data')
-dataset=Datos('DatasetEjemplo/ejemplo2.data')
+# # # dataset=Datos('DatasetEjemplo/ejemplo2.data')
+# dicc = dataset.diccionarios
+# datosTrain = dataset.datos
+# nAtributos = len(dicc) - 1
+# lensAtributos = [len(dicc[i]) for i in range(0, nAtributos)]
+# gen.poblacion = [[cr.Cromosoma(r.randint(1,gen.maxReglas), lensAtributos), None] for i in range(0,gen.tamPoblacion)]
+# temp_cr = gen.poblacion[0][0]
+# if datosTrain.dtype is not int:
+#     datosTrain = datosTrain.astype(dtype=int)
+# encoded_train = np.array([np.append(temp_cr.encode(row), 0) for row in datosTrain[:,:-1]])
+# clases = datosTrain[:,-1]
+# encoded_train[:,-1] = clases
+# gen.train = encoded_train
+#
+# for i in range(0, gen.nEpocas):
+#     gen.calcularFitnessPoblacion()
+#     gen.poblacion.sort(key=lambda elem: elem[1])
+#     print("BEST == ", gen.poblacion[-1])
+#     nextGen = gen.elitismo()
+#     # Paso 2 CRUCE: elegir para cruzar proporcional al fitness
+#     # y add a la siguiente generacion
+#     pares = gen.seleccionCruce()
+#     cruzados = gen.cruzarProgenitores(pares)
+#     nextGen.extend(cruzados)
+#     # Paso 3 MUTACION: elegir para mutar proporcional al fitness
+#     # y add a la siguiente generacion
+#     paraMutar = gen.seleccionMutar()
+#     mutados = gen.mutarProgenitores(paraMutar)
+#     nextGen.extend(mutados)
+#     # Sustituir la poblacion con la siguiente generacion
+#     gen.poblacion = nextGen
+# gen.calcularFitnessPoblacion()
+# gen.poblacion.sort(key=lambda elem: elem[1])
+
+################################################################################################
+################################################################################################
+dataset=Datos('DatasetEjemplo/tic-tac-toe.data')
+# dataset=Datos('DatasetEjemplo/ejemplo1.data')
+# dataset=Datos('DatasetEjemplo/ejemplo2.data')
 dicc = dataset.diccionarios
 
-# datosTrain = dataset.datos[:50]
-# print(datosTrain)
-gen = cl.ClasificadorGenetico(tamPoblacion=100, nEpocas=100, seed=3)
+gen = cl.ClasificadorGenetico(tamPoblacion=100, nEpocas=100, pCruce=0.95,usePrior=True)
 errors = []
-for i in range(3):
-    es = ep.ValidacionSimple(20)
+best_individuals = []
+its = 3
+for i in range(its):
+    print("ITER ", i+1, "/", its)
+    es = ep.ValidacionSimple(80)
     errors.append(gen.validacion(es,dataset,gen))
+    best_individuals.append(gen.poblacion[-1])
+    print(gen.topFitnessHistory)
 errorsnp = np.array(errors)
 mean,std = np.mean(errors), np.std(errors)
+for i in best_individuals:
+    print("REGLAS: ", i[0], "FITNESS: ", i[1])
 print("MEAN ERRORS == ", mean, " STD == ", std)
-# # gen.entrenamiento(datosTrain, dicc, dicc)
-# datosTest = dataset.datos[50:]

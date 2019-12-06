@@ -4,6 +4,7 @@ import numpy as np
 from scipy.stats import norm
 import Cromosoma as cr
 import random as r
+from copy import deepcopy
 class Clasificador:
 
     # Clase abstracta
@@ -365,15 +366,22 @@ class ClasificadorRegresionLogistica(Clasificador):
 
 ##############################################################################
 class ClasificadorGenetico(Clasificador):
-    def __init__(self, tamPoblacion=100, nEpocas=100, pCruce=0.85, pMut=0.1, pElit=0.05, maxReglas=10, seed=1):
+    def __init__(self, tamPoblacion=100, nEpocas=100, pCruce=0.85, pElit=0.05, maxReglas=10, usePrior=True):
         self.tamPoblacion = tamPoblacion
         self.nEpocas = nEpocas
         self.pCruce = pCruce
-        self.pMut = pMut
         self.pElit = pElit
         self.maxReglas = maxReglas
-        self.seed = seed
-        r.seed(self.seed)
+        if usePrior is True:
+            self.prior = 0
+        else: self.prior = -1
+
+
+        # Aseguramos que no varia el tamano de la poblacion
+        self.numElitismo = round(self.tamPoblacion * self.pElit)
+        self.numProgenitores = round(self.tamPoblacion * self.pCruce)
+        self.numProgenitores += self.numProgenitores%2
+        self.numMutar = self.tamPoblacion - self.numElitismo - self.numProgenitores
 
     def entrenamiento(self, datosTrain, atributosDiscretos, diccionario):
         # Paso 1: Crear una poblacion aleatoria
@@ -383,7 +391,6 @@ class ClasificadorGenetico(Clasificador):
         #   los atributos si un atr toma n valores -> n bits
         nAtributos = len(diccionario) - 1
         lensAtributos = [len(diccionario[i]) for i in range(0, nAtributos)]
-        lenRegla = sum(lensAtributos) + 1
         self.poblacion = [[cr.Cromosoma(r.randint(1,self.maxReglas), lensAtributos), None] for i in range(0,self.tamPoblacion)]
         # Codificamos los datos de entrenamiento para ahorrar tiempo
         temp_cr = self.poblacion[0][0]
@@ -391,16 +398,31 @@ class ClasificadorGenetico(Clasificador):
             datosTrain = datosTrain.astype(dtype=int)
         encoded_train = np.array([np.append(temp_cr.encode(row), 0) for row in datosTrain[:,:-1]])
         clases = datosTrain[:,-1]
+        if self.prior == 0:
+            self.prior = round(sum(clases)/len(clases))
         encoded_train[:,-1] = clases
         self.train = encoded_train
-        self.calcularFitnessPoblacion()
-        for i in range(0, self.nEpocas):
-            print("Epoca ", i, "/", self.nEpocas)
-            print("\n\nPob1 == ", self.poblacion)
-            self.evolucionaPoblacion()
-            print("\n\nPob2 == ", self.poblacion)
+        self.currentGen = 1
+        self.avgFitness = 0
+        self.currentGen = 0
+        self.topFitnessHistory = []
+        self.avgFitnessHistory = []
 
-        self.poblacion = sorted(self.poblacion, key=lambda elem: elem[1])
+        for i in range(0, self.nEpocas):
+            self.calcularFitnessPoblacion()
+            self.poblacion.sort(key=lambda elem: elem[1])
+            self.topFitnessHistory.append(self.poblacion[-1][1])
+            self.avgFitnessHistory.append(self.avgFitness)
+            print("Gen ",i+1,"/",self.nEpocas, "- BEST FITNESS: ", self.poblacion[-1][1], " AVG FITNESS: ", self.avgFitness)
+            # Si ya tenemos fitness del 100% no tiene sentido seguir
+            if(self.poblacion[-1][1] == 1.0):
+                print("Stop -> Max Fitness Achieved")
+                break
+            self.evolucionaPoblacion()
+            self.currentGen += 1
+
+        self.calcularFitnessPoblacion()
+        self.poblacion.sort(key=lambda elem: elem[1])
 
 
     def clasifica(self, datosTest, atributosDiscretos, diccionario):
@@ -408,10 +430,7 @@ class ClasificadorGenetico(Clasificador):
         if datosTest.dtype is not int:
             datosTest = datosTest.astype(dtype=int)
         encoded_test = np.array([classifier.encode(row) for row in datosTest[:,:-1]])
-        # dado que en este caso la funcion calcularFitness nos devuelve
-        # el porcentaje de acierto sobre el conjunto de datos datos
-        # nos vale para clasificar tambien
-        pred = [classifier.predict(row) for row in encoded_test]
+        pred = [classifier.predict(row, default=self.prior) for row in encoded_test]
         return pred
 
 
@@ -422,12 +441,13 @@ class ClasificadorGenetico(Clasificador):
         if poblacion is None:
             pob = self.poblacion
         else: pob = poblacion
+        self.avgFitness = 0
         for elem in pob:
             if elem[1] is None:
                 cr = elem[0]
-                elem[1] = cr.calcularFitness(datos=self.train)
-            # cr = elem[0]
-            # elem[1] = cr.calcularFitness(datos=self.train)
+                elem[1] = cr.calcularFitness(datos=self.train, default=self.prior)
+            self.avgFitness += elem[1]
+        self.avgFitness = self.avgFitness/self.tamPoblacion
 
     # asume que la poblacion esta ordenada de menor a mayor
     def ruletaIndices(self):
@@ -438,70 +458,95 @@ class ClasificadorGenetico(Clasificador):
             fit = self.poblacion[i][1]
             suma += fit
             if suma >= choice:
-                return self.poblacion[i]
+                return deepcopy(self.poblacion[i])
+
+        # Puede que por errores minimos de float, salga del bucle
+        # devolvemos el ultimo individuo en este caso
+        return self.poblacion[-1]
+
+
+    # selecciona a los mejores cromosomas
+    def elitismo(self):
+        if(0 < self.numElitismo):
+            supervivientes = [deepcopy(el) for el in self.poblacion[-self.numElitismo:]]
+            return supervivientes
+        else: return []
 
 
 
+    # Selecciona individuos para cruzar mediante una ruleta basada en pesos
+    # par es una lista [[[cr1, 0.3],[cr2,0.4]], [[cr3, 0.1],[cr4,0.4]]...]
+    #   cada elemento de par es una lista de 2 elementos [[cr1, 0.3],[cr2,0.4]]
+    #       cada elemento de estos es un elemento de la poblacion [cr1, 0.3]
+    def seleccionCruce(self):
+        pares = [[self.ruletaIndices(), self.ruletaIndices()] for i in range(0, self.numProgenitores//2)]
+        return pares
 
-    # de una poblacion calcula el fitness de cada individuo
-    # proporcional al fitness devuelve una lista con los progenitores
-    def seleccionProgenitores(self):
-        numProgenitores = self.tamPoblacion * self.pCruce
-        numProgenitores += numProgenitores%2
-        progenitores = [[self.ruletaIndices(), self.ruletaIndices()] for i in range(0, numProgenitores/2)]
-        return progenitores
+    # Selecciona individuos para mutar mediante una ruleta basada en pesos
+    def seleccionMutar(self):
+        paraMutar = [self.ruletaIndices() for i in range(0, self.numMutar)]
+        return paraMutar
 
 
     # Cruza los cromosomas de los progenitores de dos en dos
     # con probabilidad pCruce
-    def cruzarProgenitores(self, progenitores):
-        numPares = len(progenitores)
-        cruces = [pr[0][0].cruzar(pr[0][1]) for pr in progenitores]
-        cruces = [progenitores[i][0][0].cruzar(progenitores[i][1][0]) for i in range(0, numPares)]
+    # pares == [[[cr1, 0.3],[cr2,0.4]], [[cr3, 0.1],[cr4,0.4]]...]
+    # par in pares == [[cr1, 0.3],[cr2,0.4]]
+    # par1 == [cr1, 0.3]
+    # par1[0] == cr1
+    # par1[1] == 0.3
+    def cruzarProgenitores(self, pares):
+        cruces = []
+        for par in pares:
+            par1 = par[0]
+            par2 = par[1]
+            par1[0].cruzar(par2[0])
+            # Modificamos su fitness porque hay que volver a calcular
+            par1[1] = None
+            par2[1] = None
+            cruces.append(par1)
+            cruces.append(par2)
 
-        while len(indices) > 1:
-            index1 = r.choice(indices)
-            indices.remove(index1)
-            index2 = r.choice(indices)
-            indices.remove(index2)
-            if(r.random() < self.pCruce):
-                cr1 = progenitores[index1][0]
-                cr2 = progenitores[index2][0]
-                cr1.cruzar(cr2)
-                # Modificamos su fitness porque hay que volver a calcular
-                progenitores[index1][1] = None
-                progenitores[index2][1] = None
+        return cruces
+
 
     # cambia 1 bit de los cromosomas de los progenitores
-    # con probabilidad pMut para cada cromosoma
     def mutarProgenitores(self, progenitores):
         for p in progenitores:
-            if(r.random() < self.pMut):
-                p[0].mutar()
-                # Modificamos su fitness porque hay que volver a calcular
-                p[1] = None
+            p[0].mutar()
+            # Modificamos su fitness porque hay que volver a calcular
+            p[1] = None
+        return progenitores
 
-    # selecciona a los mejores cromosomas
-    def elitismo(self):
-        # self.calcularFitnessPoblacion(poblacion=progenitores)
-        self.poblacion.sort(key=lambda elem: elem[1])
-        nSup = round(self.pElit * self.tamPoblacion)
-        if nSup < 1:
-            nSup = 1
-        supervivientes = [el for el in self.poblacion[-nSup:]]
-        return supervivientes
 
+    # Funcion que crea la siguiente generacion a partir de la anterior
+    # a base de 1 - Elitismo
+    #           2 - Cruce
+    #           3 - Mutacion
     def evolucionaPoblacion(self):
+        # Paso 1 ELITISIMO: elegir a los mejores y add a la siguiente generacion
         nextGen = self.elitismo()
-        progenitores = self.seleccionProgenitores()
-        self.cruzarProgenitores(progenitores)
-        self.mutarProgenitores(progenitores)
-        supervivientes = self.elitismo(progenitores)
-        self.poblacion = sorted(self.poblacion, key=lambda elem: elem[1])
-        nElim = len(supervivientes)
-        self.poblacion[:nElim] = supervivientes
+        # Paso 2 CRUCE: elegir para cruzar proporcional al fitness
+        # y add a la siguiente generacion
+        pares = self.seleccionCruce()
+        cruzados = self.cruzarProgenitores(pares)
+        nextGen.extend(cruzados)
+        # Paso 3 MUTACION: elegir para mutar proporcional al fitness
+        # y add a la siguiente generacion
+        paraMutar = self.seleccionMutar()
+        mutados = self.mutarProgenitores(paraMutar)
+        nextGen.extend(mutados)
+        # Sustituir la poblacion con la siguiente generacion
+        self.poblacion = nextGen
 
-
+def testPob(lista=None):
+    pob = [c[0] for c in lista]
+    test = set(pob)
+    if(len(test) != len(pob)):
+        print("\nERROR")
+        for el in test:
+            pob.remove(el)
+        print("CULPRITs == ", pob)
 
 
 
