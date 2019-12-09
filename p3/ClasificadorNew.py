@@ -408,12 +408,22 @@ class ClasificadorGenetico(Clasificador):
         self.topFitnessHistory = []
         self.avgFitnessHistory = []
 
+        no_change = 0
+        bestFit = self.poblacion[0][1]
+
         for i in range(0, self.nEpocas):
             self.calcularFitnessPoblacion()
             self.poblacion.sort(key=lambda elem: elem[1])
             self.topFitnessHistory.append(self.poblacion[-1][1])
             self.avgFitnessHistory.append(self.avgFitness)
             print("Gen ",i+1,"/",self.nEpocas, "- BEST FITNESS: ", self.poblacion[-1][1], " AVG FITNESS: ", self.avgFitness)
+            if no_change > 10:
+                print("Stop -> Algorithm fitness converged")
+                break
+            if bestFit != self.poblacion[-1][1]:
+                bestFit = self.poblacion[-1][1]
+                no_change = 0
+            else: no_change +=1
             # Si ya tenemos fitness del 100% no tiene sentido seguir
             if(self.poblacion[-1][1] == 1.0):
                 print("Stop -> Max Fitness Achieved")

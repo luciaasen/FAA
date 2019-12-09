@@ -4,8 +4,10 @@ import ClasificadorNew as cl
 import EstrategiaParticionado as ep
 
 
-
-def pruebaGenetica(dicc, porcentajes, tamsPob, gens, maxReglas, pElitismo, pCruce, repeticiones):
+def pruebaGenetica(dicc, porcentajes, tamsPob, gens, maxReglas, pElitismo, pCruce, repeticiones, outFile=None):
+    # if outFile is None:
+    #     f = open('results.txt', "w")
+    # else: f = open(outFile, "w")
     cont = 0
     total = len(dicc) * len(porcentajes) * len(tamsPob) * len(gens) * len(maxReglas) * len(pElitismo) * len(pCruce) * repeticiones
     result_matrix = []
@@ -27,7 +29,7 @@ def pruebaGenetica(dicc, porcentajes, tamsPob, gens, maxReglas, pElitismo, pCruc
                                     print("Iteracion ",cont,"/", total)
                                     estrategia = ep.ValidacionSimple(prcnt)
                                     errors.append(gen.validacion(estrategia,dataset,gen))
-                                    mejoresCr.append(gen.poblacion[-1])
+                                    mejoresCr.append([list(gen.poblacion[-1][0].reglas),gen.poblacion[-1][1]])
                                     numGens.append(gen.currentGen)
                                     avgFitness.append(gen.avgFitness)
                                 errorsnp = np.array(errors)
@@ -37,30 +39,30 @@ def pruebaGenetica(dicc, porcentajes, tamsPob, gens, maxReglas, pElitismo, pCruc
                                 mean,std = np.mean(errors), np.std(errors)
                                 fitMean = np.mean(avgFitnessnp)
                                 gensMean = np.mean(numGensnp)
-                                result_matrix.append([dicc[fileName], prcnt, tam, epoca, reg, pe, pc, gensMean, fitMean, mean, std, mejoresCr])
+                                # result_matrix.append([dicc[fileName], prcnt, tam, epoca, reg, pe, pc, gensMean, fitMean, mean, std, mejoresCr])
+                                # f.write(str([dicc[fileName], prcnt, tam, epoca, reg, pe, pc, gensMean, fitMean, mean, std, mejoresCr]))
+                                # f.write("\n")
+    # f.close()
 
-    return result_matrix
 
+# dicc = {'ejemplo1' : './DatasetEjemplo/ejemplo1.data', 'ejemplo2' : './DatasetEjemplo/ejemplo2.data', 'tic' : './DatasetEjemplo/tic-tac-toe.data'}
+# porcentajes = [20, 40, 80]
+# tamsPob = [100, 200]
+# gens = [100, 300]
+# maxReglas = [1, 5, 10, 15, 20]
+# pElitismo = [0.05, 0.1, 0.15]
+# pCruce = [0.2, 0.4, 0.6, 0.8, 0.85]
+# repeticiones = 5
 
-dicc = {'ejemplo1' : './DatasetEjemplo/ejemplo1.data', 'ejemplo2' : './DatasetEjemplo/ejemplo2.data', 'tic' : './DatasetEjemplo/tic-tac-toe.data'}
+dicc = dicc = {'tic' : './DatasetEjemplo/tic-tac-toe.data'}
 porcentajes = [20, 40, 80]
 tamsPob = [100, 200]
 gens = [100, 300]
-maxReglas = [1, 5, 10, 15, 20]
+maxReglas = [5, 10, 15, 20]
 pElitismo = [0.05, 0.1, 0.15]
-pCruce = [0.2, 0.4, 0.6, 0.8, 0.85]
-repeticiones = 5
-
-# dicc = dicc = {'ejemplo1' : './DatasetEjemplo/ejemplo1.data', 'ejemplo2' : './DatasetEjemplo/ejemplo2.data', 'tic' : './DatasetEjemplo/tic-tac-toe.data'}
-# porcentajes = [80, 90]
-# tamsPob = [10, 20]
-# gens = [2, 4]
-# maxReglas = [1, 3]
-# pElitismo = [0.05, 0.1]
-# pCruce = [0.2, 0.5]
-# repeticiones = 3
+pCruce = [0.2, 0.4, 0.6, 0.85]
+repeticiones = 2
 
 # De la forma implementada, mutación es en función del elitismo y los cruces,
 # de manera que hay pMutacion = 1 - pElitismo - pCruce
-res = pruebaGenetica(dicc, porcentajes, tamsPob, gens, maxReglas, pElitismo, pCruce, repeticiones)
-print(res)
+pruebaGenetica(dicc, porcentajes, tamsPob, gens, maxReglas, pElitismo, pCruce, repeticiones)
